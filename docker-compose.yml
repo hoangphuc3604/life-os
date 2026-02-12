@@ -1,0 +1,40 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: lifeos_postgres
+    environment:
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lifeos_auth
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  auth-service:
+    build:
+      context: ./services/auth-service
+      target: development
+    container_name: lifeos_auth_service
+    ports:
+      - "3000:3000"
+    environment:
+      POSTGRES_HOST: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_USER: user
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: lifeos_auth
+      PORT: 3000
+    volumes:
+      - ./services/auth-service:/usr/src/app
+      - /usr/src/app/node_modules
+    depends_on:
+      - postgres
+    command: npm run start:dev
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
