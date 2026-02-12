@@ -15,7 +15,7 @@ export class User {
   @Column()
   password_hash: string;
 
-  @Column('simple-array', { nullable: true })
+  @Column('simple-array', { default: 'user' })
   roles: string[]; // e.g., 'user', 'admin'
 
   @CreateDateColumn()

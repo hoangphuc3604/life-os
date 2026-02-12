@@ -103,7 +103,9 @@ describe('AuthService', () => {
       
       const result = await service.register(dto);
       
-      expect(userRepository.create).toHaveBeenCalled();
+      expect(userRepository.create).toHaveBeenCalledWith(
+        expect.objectContaining({ roles: ['user'] }),
+      );
       expect(userRepository.save).toHaveBeenCalled();
       expect(result).toEqual(expect.objectContaining({ email: 'test@example.com' }));
       expect(result).not.toHaveProperty('password_hash');
@@ -132,7 +134,7 @@ describe('AuthService', () => {
       userRepository.findOne.mockResolvedValue(mockUser);
       (bcrypt.compareSync as jest.Mock).mockReturnValue(true);
 
-      const result = await service.validateUser('test@example.com', 'password');
+      const result = await service.validateUser('testuser', 'password');
       expect(result).toEqual(mockUser);
     });
 
@@ -140,20 +142,20 @@ describe('AuthService', () => {
       userRepository.findOne.mockResolvedValue(mockUser);
       (bcrypt.compareSync as jest.Mock).mockReturnValue(false);
 
-      const result = await service.validateUser('test@example.com', 'wrongpassword');
+      const result = await service.validateUser('testuser', 'wrongpassword');
       expect(result).toBeNull();
     });
 
     it('should return null if user not found', async () => {
       userRepository.findOne.mockResolvedValue(null);
-      const result = await service.validateUser('test@example.com', 'password');
+      const result = await service.validateUser('testuser', 'password');
       expect(result).toBeNull();
     });
   });
 
   describe('login', () => {
     it('should return access and refresh tokens', async () => {
-      const loginDto = { email: 'test@example.com', password: 'password' };
+      const loginDto = { username: 'testuser', password: 'password' };
       // Spy on validateUser since it's a method on the same class
       jest.spyOn(service, 'validateUser').mockResolvedValue(mockUser);
       
@@ -178,7 +180,7 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException if validation fails', async () => {
       jest.spyOn(service, 'validateUser').mockResolvedValue(null);
-      await expect(service.login({ email: 'a', password: 'b' })).rejects.toThrow(UnauthorizedException);
+      await expect(service.login({ username: 'a', password: 'b' })).rejects.toThrow(UnauthorizedException);
     });
   });
 

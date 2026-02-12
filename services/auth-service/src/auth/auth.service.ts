@@ -25,6 +25,7 @@ export class AuthService {
       const user = this.userRepository.create({
         ...userData,
         password_hash: bcrypt.hashSync(password, 10),
+        roles: ['user'],
       });
 
       await this.userRepository.save(user);
@@ -39,8 +40,8 @@ export class AuthService {
     }
   }
 
-  async validateUser(email: string, pass: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { email } });
+  async validateUser(username: string, pass: string): Promise<User | null> {
+    const user = await this.userRepository.findOne({ where: { username } });
     if (user && bcrypt.compareSync(pass, user.password_hash)) {
       return user;
     }
@@ -48,7 +49,7 @@ export class AuthService {
   }
 
   async login(loginUserDto: LoginUserDto) {
-    const user = await this.validateUser(loginUserDto.email, loginUserDto.password);
+    const user = await this.validateUser(loginUserDto.username, loginUserDto.password);
     if (!user) {
       throw new UnauthorizedException('Invalid credentials');
     }
