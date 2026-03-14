@@ -88,4 +88,17 @@ describe('AuthController', () => {
       expect(result).toEqual(req.user);
     });
   });
+
+  describe('validate', () => {
+    it('should set headers and return undefined', () => {
+      const req = { user: { userId: 'user-id', email: 'test@example.com' } };
+      const res = { setHeader: jest.fn() } as any;
+      
+      const result = controller.validate(req, res);
+      
+      expect(res.setHeader).toHaveBeenCalledWith('X-User-Id', 'user-id');
+      expect(res.setHeader).toHaveBeenCalledWith('X-User-Email', 'test@example.com');
+      expect(result).toBeUndefined();
+    });
+  });
 });

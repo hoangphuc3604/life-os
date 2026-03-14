@@ -19,8 +19,6 @@ services:
       context: ./services/auth-service
       target: development
     container_name: lifeos_auth_service
-    ports:
-      - "3000:3000"
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -35,6 +33,16 @@ services:
     depends_on:
       - postgres
     command: npm run start:dev
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+    container_name: lifeos_api_gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - auth-service
     restart: unless-stopped
 
 volumes:
