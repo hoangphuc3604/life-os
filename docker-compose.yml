@@ -28,6 +28,7 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: lifeos_auth
       PORT: 3000
+      DATABASE_URL: postgresql://user:password@postgres:5432/lifeos_auth
     volumes:
       - ./services/auth-service:/usr/src/app
       - /usr/src/app/node_modules

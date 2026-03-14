@@ -2,6 +2,7 @@
 
 **Entry Point:** `services/auth-service`
 **Capture Date:** 2026-02-12
+**Last Updated:** 2026-03-14
 
 ## Overview
 The `auth-service` is a NestJS-based microservice responsible for user authentication and authorization. It handles user registration, login, token management (issuance, rotation, revocation), and user profile retrieval.
@@ -11,11 +12,15 @@ The `auth-service` is a NestJS-based microservice responsible for user authentic
 ### Stack
 - **Framework:** NestJS
 - **Language:** TypeScript
-- **Database:** PostgreSQL (via TypeORM)
+- **Database:** PostgreSQL (via Prisma ORM)
 - **Authentication:** JWT (JSON Web Tokens) with Passport strategy
 - **Containerization:** Docker (Multi-stage build)
 
 ### Key Components
+
+#### Prisma Module (`src/prisma`)
+Global module providing PrismaClient instance.
+- **Service (`PrismaService`):** Extends PrismaClient with NestJS lifecycle hooks.
 
 #### Auth Module (`src/auth`)
 The core module encapsulating all authentication logic.
@@ -24,21 +29,22 @@ The core module encapsulating all authentication logic.
 - **Strategies (`JwtStrategy`):** Handles JWT validation for protected routes.
 - **Guards (`JwtAuthGuard`):** Protects endpoints requiring a valid access token.
 
-#### Data Model (`src/entities`)
+#### Data Model (`prisma/schema.prisma`)
 1.  **User (`users` table):**
     - `id` (UUID)
     - `username` (Unique)
     - `email` (Unique)
-    - `password_hash` (Bcrypt hash)
-    - `roles` (Array, e.g., `['user']`)
-    - `refreshTokens` (One-to-Many relation)
+    - `passwordHash` (Bcrypt hash)
+    - `roles` (String array, e.g., `['user']`)
+    - `createdAt`, `updatedAt` (Timestamps)
 
 2.  **RefreshToken (`refresh_tokens` table):**
     - `id` (UUID, used as JTI)
-    - `user_id` (FK to User)
-    - `token_hash` (Bcrypt hash of the actual refresh token string)
-    - `expires_at` (Date)
+    - `userId` (FK to User)
+    - `tokenHash` (Bcrypt hash of the actual refresh token string)
+    - `expiresAt` (DateTime)
     - `revoked` (Boolean)
+    - `createdAt` (DateTime)
 
 ## Authentication Flow
 
@@ -47,7 +53,7 @@ The core module encapsulating all authentication logic.
 - **Payload:** `RegisterUserDto` (username, email, password, etc.)
 - **Logic:**
     - Hashes password using `bcrypt`.
-    - Creates `User` entity.
+    - Creates `User` record using Prisma.
     - Returns user details (excluding password).
 - **Errors:** 409 Conflict if user already exists.
 
@@ -57,9 +63,9 @@ The core module encapsulating all authentication logic.
 - **Logic:**
     - Validates credentials.
     - **Refresh Token Creation:**
-        - Creates a `RefreshToken` entity in DB (status `pending`).
-        - signs a JWT for the refresh token, including the entity ID (`jti`).
-        - Hashes the signed JWT and updates the entity with this hash.
+        - Creates a `RefreshToken` record in DB (status `pending`).
+        - Signs a JWT for the refresh token, including the entity ID (`jti`).
+        - Hashes the signed JWT and updates the record with this hash.
     - **Access Token Creation:** Signs a short-lived JWT.
     - Returns `{ access_token, refresh_token }`.
 
@@ -68,7 +74,7 @@ The core module encapsulating all authentication logic.
 - **Payload:** `RefreshTokenDto` (refresh_token)
 - **Logic:**
     - Verifies JWT signature.
-    - Retrieves `RefreshToken` entity using `jti` from payload.
+    - Retrieves `RefreshToken` record using `jti` from payload.
     - **Security Checks:**
         - Checks if token is revoked (Reuse Detection).
         - Checks if token hash matches (using `bcrypt`).
@@ -83,7 +89,7 @@ The core module encapsulating all authentication logic.
 - **Payload:** `RefreshTokenDto`
 - **Logic:**
     - Decodes token to get `jti`.
-    - Marks the corresponding `RefreshToken` entity as `revoked = true`.
+    - Marks the corresponding `RefreshToken` record as `revoked = true`.
 
 ## Infrastructure
 
@@ -101,12 +107,18 @@ Integrated into the main stack:
 - **Environment Variables:**
     - `POSTGRES_HOST`: `postgres`
     - `POSTGRES_PORT`, `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`
+    - `DATABASE_URL`: `postgresql://user:password@postgres:5432/lifeos_auth`
+    - `JWT_SECRET`, `JWT_EXPIRATION`
     - `PORT`: `3000`
 - **Volumes:** Mounts source code for live reload in development.
 
 ## Dependencies
 - `@nestjs/common`, `@nestjs/core`, `@nestjs/config`: Core framework.
-- `@nestjs/typeorm`, `typeorm`, `pg`: Database interaction.
+- `@prisma/client`, `prisma`: Database interaction.
 - `@nestjs/passport`, `@nestjs/jwt`, `passport-jwt`: Authentication.
 - `bcrypt`: Password and token hashing.
 - `@nestjs/swagger`: API documentation.
+
+## Testing
+- **Unit Tests:** Located in `src/auth/*.spec.ts`, use Jest with mocked PrismaClient.
+- **E2E Tests:** Located in `test/*.e2e-spec.ts`, use mocked PrismaService to avoid real database connections.

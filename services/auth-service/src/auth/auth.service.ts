@@ -1,20 +1,14 @@
 import { ConflictException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
-import { User } from '../entities/user.entity';
-import { RefreshToken } from '../entities/refresh-token.entity';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 
 @Injectable()
 export class AuthService {
   constructor(
-    @InjectRepository(User)
-    private readonly userRepository: Repository<User>,
-    @InjectRepository(RefreshToken)
-    private readonly refreshTokenRepository: Repository<RefreshToken>,
+    private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
   ) {}
 
@@ -22,28 +16,29 @@ export class AuthService {
     const { password, ...userData } = registerUserDto;
 
     try {
-      const user = this.userRepository.create({
-        ...userData,
-        password_hash: bcrypt.hashSync(password, 10),
-        roles: ['user'],
+      const user = await this.prisma.user.create({
+        data: {
+          ...userData,
+          passwordHash: bcrypt.hashSync(password, 10),
+          roles: ['user'],
+        },
       });
 
-      await this.userRepository.save(user);
-      const { password_hash, ...result } = user;
-      
+      const { passwordHash, ...result } = user;
       return result;
-    } catch (error) {
-      if (error.code === '23505') {
+    } catch (error: any) {
+      if (error.code === 'P2002') {
         throw new ConflictException('User already exists');
       }
       throw new InternalServerErrorException();
     }
   }
 
-  async validateUser(username: string, pass: string): Promise<User | null> {
-    const user = await this.userRepository.findOne({ where: { username } });
-    if (user && bcrypt.compareSync(pass, user.password_hash)) {
-      return user;
+  async validateUser(username: string, pass: string) {
+    const user = await this.prisma.user.findUnique({ where: { username } });
+    if (user && bcrypt.compareSync(pass, user.passwordHash)) {
+      const { passwordHash, ...result } = user;
+      return result;
     }
     return null;
   }
@@ -55,26 +50,24 @@ export class AuthService {
     }
 
     const tokenPayload = { email: user.email, sub: user.id, roles: user.roles };
-    
-    // Create Refresh Token entity first to get the ID (jti)
-    const refreshTokenEntity = this.refreshTokenRepository.create({
-      user_id: user.id,
-      token_hash: 'pending', // Temporary, will update after signing
-      expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days
-    });
-    
-    const savedToken = await this.refreshTokenRepository.save(refreshTokenEntity);
 
-    // Sign Access Token
+    const refreshTokenEntity = await this.prisma.refreshToken.create({
+      data: {
+        userId: user.id,
+        tokenHash: 'pending',
+        expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      },
+    });
+
     const accessToken = this.jwtService.sign(tokenPayload);
-    
-    // Sign Refresh Token including the JTI (entity ID)
-    const refreshTokenPayload = { ...tokenPayload, jti: savedToken.id };
+
+    const refreshTokenPayload = { ...tokenPayload, jti: refreshTokenEntity.id };
     const refreshToken = this.jwtService.sign(refreshTokenPayload, { expiresIn: '7d' });
 
-    // Update entity with the hash of the actual signed token
-    savedToken.token_hash = bcrypt.hashSync(refreshToken, 10);
-    await this.refreshTokenRepository.save(savedToken);
+    await this.prisma.refreshToken.update({
+      where: { id: refreshTokenEntity.id },
+      data: { tokenHash: bcrypt.hashSync(refreshToken, 10) },
+    });
 
     return {
       access_token: accessToken,
@@ -91,62 +84,58 @@ export class AuthService {
         throw new UnauthorizedException('Invalid refresh token');
       }
 
-      const tokenEntity = await this.refreshTokenRepository.findOne({ where: { id: tokenId } });
+      const tokenEntity = await this.prisma.refreshToken.findUnique({ where: { id: tokenId } });
 
       if (!tokenEntity) {
         throw new UnauthorizedException('Refresh token not found');
       }
 
       if (tokenEntity.revoked) {
-        // Potential security event: reuse of revoked token! 
-        // In a real app, we might want to revoke all user tokens here.
-        throw new UnauthorizedException('Refresh token revoked'); 
+        throw new UnauthorizedException('Refresh token revoked');
       }
 
-      const isMatch = bcrypt.compareSync(refreshToken, tokenEntity.token_hash);
+      const isMatch = bcrypt.compareSync(refreshToken, tokenEntity.tokenHash);
       if (!isMatch) {
-         throw new UnauthorizedException('Invalid refresh token');
+        throw new UnauthorizedException('Invalid refresh token');
       }
 
-      // Check for expiry (although jwt verify handles this, DB might have different rules)
-      if (new Date() > tokenEntity.expires_at) {
+      if (new Date() > tokenEntity.expiresAt) {
         throw new UnauthorizedException('Refresh token expired');
       }
 
-      // Token Rotation: Revoke the used token
-      tokenEntity.revoked = true;
-      await this.refreshTokenRepository.save(tokenEntity);
+      await this.prisma.refreshToken.update({
+        where: { id: tokenId },
+        data: { revoked: true },
+      });
 
-      // Issue new tokens
-      const user = await this.userRepository.findOne({ where: { id: payload.sub } });
+      const user = await this.prisma.user.findUnique({ where: { id: payload.sub } });
       if (!user) {
         throw new UnauthorizedException('User not found');
       }
 
-      // Reuse login logic or duplicate simplified logic here?
-      // Simplified logic for new token generation to avoid infinite recursion or overhead:
-      
       const newPayload = { email: user.email, sub: user.id, roles: user.roles };
       const newAccessToken = this.jwtService.sign(newPayload);
-      
-      const newRefreshTokenEntity = this.refreshTokenRepository.create({
-        user_id: user.id,
-        token_hash: 'pending',
-        expires_at: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+
+      const newRefreshTokenEntity = await this.prisma.refreshToken.create({
+        data: {
+          userId: user.id,
+          tokenHash: 'pending',
+          expiresAt: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+        },
       });
-      const savedNewToken = await this.refreshTokenRepository.save(newRefreshTokenEntity);
-      
-      const newRefreshTokenPayload = { ...newPayload, jti: savedNewToken.id };
+
+      const newRefreshTokenPayload = { ...newPayload, jti: newRefreshTokenEntity.id };
       const newRefreshToken = this.jwtService.sign(newRefreshTokenPayload, { expiresIn: '7d' });
-      
-      savedNewToken.token_hash = bcrypt.hashSync(newRefreshToken, 10);
-      await this.refreshTokenRepository.save(savedNewToken);
+
+      await this.prisma.refreshToken.update({
+        where: { id: newRefreshTokenEntity.id },
+        data: { tokenHash: bcrypt.hashSync(newRefreshToken, 10) },
+      });
 
       return {
         access_token: newAccessToken,
         refresh_token: newRefreshToken,
       };
-
     } catch (e) {
       throw new UnauthorizedException('Invalid refresh token');
     }
@@ -154,18 +143,16 @@ export class AuthService {
 
   async logout(refreshToken: string) {
     try {
-      // We decode instead of verify because even if it's expired, we might want to ensure it's revoked in DB
-      // But verify is safer to ensure it's our token. 
-      // Let's use verify but ignore expiration if possible, or just catch error.
-      // For simple logout, if it's expired, it's already useless, so verify is fine.
       const payload = this.jwtService.verify(refreshToken);
       const tokenId = payload.jti;
 
       if (tokenId) {
-        await this.refreshTokenRepository.update(tokenId, { revoked: true });
+        await this.prisma.refreshToken.update({
+          where: { id: tokenId },
+          data: { revoked: true },
+        });
       }
     } catch (e) {
-      // If token is invalid/expired, logout is effectively done or irrelevant
     }
     return { message: 'Logged out' };
   }
