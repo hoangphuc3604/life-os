@@ -1,8 +1,6 @@
 import { Test, TestingModule } from '@nestjs/testing';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { RegisterUserDto } from './dto/register-user.dto';
-import { LoginUserDto } from './dto/login-user.dto';
 
 describe('AuthController', () => {
   let controller: AuthController;
@@ -88,6 +86,19 @@ describe('AuthController', () => {
       const req = { user: { id: 'user-id', email: 'test@example.com' } };
       const result = controller.getProfile(req);
       expect(result).toEqual(req.user);
+    });
+  });
+
+  describe('validate', () => {
+    it('should set headers and return undefined', () => {
+      const req = { user: { userId: 'user-id', email: 'test@example.com' } };
+      const res = { setHeader: jest.fn() } as any;
+      
+      const result = controller.validate(req, res);
+      
+      expect(res.setHeader).toHaveBeenCalledWith('X-User-Id', 'user-id');
+      expect(res.setHeader).toHaveBeenCalledWith('X-User-Email', 'test@example.com');
+      expect(result).toBeUndefined();
     });
   });
 });

@@ -1,4 +1,5 @@
-import { Body, Controller, Post, HttpCode, HttpStatus, UseGuards, Get, Request } from '@nestjs/common';
+import { Body, Controller, Post, HttpCode, HttpStatus, UseGuards, Get, Request, Res } from '@nestjs/common';
+import type { Response } from 'express';
 import { ApiTags, ApiOperation, ApiResponse, ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
@@ -53,6 +54,31 @@ export class AuthController {
   @ApiResponse({ status: 401, description: 'Unauthorized.' })
   getProfile(@Request() req) {
     return req.user;
+  }
+
+  @UseGuards(JwtAuthGuard)
+  @Get('validate')
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Validate access token for API Gateway' })
+  @ApiResponse({ status: 200, description: 'Token is valid.' })
+  @ApiResponse({ status: 401, description: 'Unauthorized.' })
+  validate(@Request() req, @Res({ passthrough: true }) res: Response) {
+    if (req.user && req.user.userId) {
+        res.setHeader('X-User-Id', req.user.userId);
+    }
+    if (req.user && req.user.email) {
+        res.setHeader('X-User-Email', req.user.email);
+    }
+    return;
+  }
+
+  @Get('public-protected')
+  @ApiOperation({ summary: 'Dummy endpoint for API Gateway testing' })
+  publicProtected(@Request() req) {
+    return {
+      message: 'Hello from internal service',
+      userIdFromGateway: req.headers['x-user-id'] || 'Missing Header'
+    };
   }
 }
 

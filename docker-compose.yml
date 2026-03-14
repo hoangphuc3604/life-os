@@ -19,8 +19,6 @@ services:
       context: ./services/auth-service
       target: development
     container_name: lifeos_auth_service
-    ports:
-      - "3000:3000"
     environment:
       POSTGRES_HOST: postgres
       POSTGRES_PORT: 5432
@@ -28,12 +26,23 @@ services:
       POSTGRES_PASSWORD: password
       POSTGRES_DB: lifeos_auth
       PORT: 3000
+      DATABASE_URL: postgresql://user:password@postgres:5432/lifeos_auth
     volumes:
       - ./services/auth-service:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
       - postgres
     command: npm run start:dev
+    restart: unless-stopped
+
+  api-gateway:
+    build:
+      context: ./services/api-gateway
+    container_name: lifeos_api_gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - auth-service
     restart: unless-stopped
 
 volumes:
