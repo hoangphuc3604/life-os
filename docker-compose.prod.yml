@@ -1,0 +1,36 @@
+version: '3.8'
+
+services:
+  postgres:
+    image: postgres:15-alpine
+    container_name: lifeos_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
+      POSTGRES_DB: ${POSTGRES_DB:-lifeos_auth}
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    restart: unless-stopped
+
+  auth-service:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/lifeos-auth:latest
+    container_name: lifeos_auth_service
+    env_file:
+      - .env
+    depends_on:
+      - postgres
+    restart: unless-stopped
+
+  api-gateway:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/lifeos-gateway:latest
+    container_name: lifeos_api_gateway
+    ports:
+      - "8080:80"
+    depends_on:
+      - auth-service
+    restart: unless-stopped
+
+volumes:
+  postgres_data:
