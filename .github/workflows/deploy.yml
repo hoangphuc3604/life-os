@@ -109,7 +109,9 @@ jobs:
 
       - name: Logout from Registry
         if: always()
-        uses: docker/logout-action@v3
+        uses: docker/logout-action@v3.0.0
+        with:
+          registry: ${{ env.REGISTRY }}
 
   deploy:
     needs: build-and-push
