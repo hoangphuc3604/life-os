@@ -32,4 +32,7 @@ RUN npx prisma generate
 
 COPY --from=development /usr/src/app/dist ./dist
 
-CMD ["node", "dist/main"]
+COPY docker-entrypoint.sh ./
+RUN chmod +x docker-entrypoint.sh
+
+CMD ["./docker-entrypoint.sh", "node", "dist/main"]

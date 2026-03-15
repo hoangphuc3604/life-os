@@ -24,7 +24,7 @@
   - Cho phép config nguồn tin (RSS Feeds, Website URL).
   - Job chạy ngầm (Background Worker) định kỳ quét tin mới.
 - **AI Processing**:
-  - Tự động tóm tắt bài viết/tin tức theo format: N gạch đầu dòng + Phân tích Ưu/Nhược điểm.
+  - Tự động tóm tắt bài viết/tin tức theo format: N gạch đầu dòng + Phân tích Ưu/Nhược điểm (Nếu là về một phương pháp).
 - **YouTube Integration**:
   - **Input**: Dán link YouTube.
   - **Process**: Lấy Transcript -> Gửi cho AI -> Tóm tắt nội dung chính.

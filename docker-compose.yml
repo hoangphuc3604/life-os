@@ -5,45 +5,77 @@ services:
     image: postgres:15-alpine
     container_name: lifeos_postgres
     environment:
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: lifeos_auth
+      POSTGRES_USER: ${POSTGRES_USER:-user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
+      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d lifeos_auth"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
+    networks:
+      - lifeos-network
 
   auth-service:
     build:
       context: ./services/auth-service
       target: development
     container_name: lifeos_auth_service
-    environment:
-      POSTGRES_HOST: postgres
-      POSTGRES_PORT: 5432
-      POSTGRES_USER: user
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: lifeos_auth
-      PORT: 3000
-      DATABASE_URL: postgresql://user:password@postgres:5432/lifeos_auth
+    env_file:
+      - ./services/auth-service/.env
     volumes:
       - ./services/auth-service:/usr/src/app
       - /usr/src/app/node_modules
     depends_on:
-      - postgres
+      postgres:
+        condition: service_healthy
     command: npm run start:dev
     restart: unless-stopped
+    networks:
+      - lifeos-network
+
+  knowledge-service:
+    build:
+      context: ./services/knowledge-service
+      target: development
+    container_name: lifeos_knowledge_service
+    env_file:
+      - ./services/knowledge-service/.env
+    volumes:
+      - ./services/knowledge-service:/usr/src/app
+      - /usr/src/app/node_modules
+      - knowledge_uploads:/usr/src/app/uploads
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: npm run start:dev
+    restart: unless-stopped
+    networks:
+      - lifeos-network
 
   api-gateway:
     build:
       context: ./services/api-gateway
     container_name: lifeos_api_gateway
     ports:
-      - "8080:80"
+      - "${API_GATEWAY_PORT:-8080}:80"
     depends_on:
       - auth-service
+      - knowledge-service
     restart: unless-stopped
+    networks:
+      - lifeos-network
+
+networks:
+  lifeos-network:
+    driver: bridge
 
 volumes:
   postgres_data:
+  knowledge_uploads:
