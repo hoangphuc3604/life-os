@@ -104,7 +104,8 @@ jobs:
           key: ${{ secrets.GCP_VM_SSH_KEY }}
           script: |
             cd ~/lifeos
-            echo "POSTGRES_HOST=postgres" > .env
+            echo "DATABASE_URL=postgresql://user:password@postgres:5432/lifeos_auth" > .env
+            echo "POSTGRES_HOST=postgres" >> .env
             echo "POSTGRES_PORT=5432" >> .env
             echo "POSTGRES_USER=user" >> .env
             echo "POSTGRES_PASSWORD=password" >> .env
