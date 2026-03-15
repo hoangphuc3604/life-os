@@ -137,18 +137,17 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{REFRESH_TOKEN}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"refresh_token\": \"{{REFRESH_TOKEN}}\"\r\n}"
+						},
 						"url": {
 							"raw": "{{BASE_URL}}/api/auth/refresh",
 							"host": [
@@ -181,18 +180,17 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"refresh_token\": \"{{REFRESH_TOKEN}}\"\r\n}"
+						},
 						"url": {
 							"raw": "{{BASE_URL}}/api/auth/logout",
 							"host": [
