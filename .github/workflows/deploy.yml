@@ -77,11 +77,24 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
       - name: Set lower case owner name
         run: |
           echo "OWNER_LC=${OWNER,,}" >>${GITHUB_ENV}
         env:
           OWNER: '${{ github.repository_owner }}'
+
+      - name: Copy docker-compose.prod.yml to VM
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.GCP_VM_HOST }}
+          username: ${{ secrets.GCP_VM_USER }}
+          key: ${{ secrets.GCP_VM_SSH_KEY }}
+          source: "docker-compose.prod.yml"
+          target: "~/lifeos"
+          strip_components: 0
 
       - name: Executing remote SSH commands
         uses: appleboy/ssh-action@v1.0.3
@@ -90,10 +103,18 @@ jobs:
           username: ${{ secrets.GCP_VM_USER }}
           key: ${{ secrets.GCP_VM_SSH_KEY }}
           script: |
-            mkdir -p ~/lifeos
             cd ~/lifeos
+            echo "POSTGRES_HOST=postgres" > .env
+            echo "POSTGRES_PORT=5432" >> .env
+            echo "POSTGRES_USER=user" >> .env
+            echo "POSTGRES_PASSWORD=password" >> .env
+            echo "POSTGRES_DB=lifeos_auth" >> .env
+            echo "JWT_SECRET=super-secret-key-change-in-production" >> .env
+            echo "JWT_EXPIRATION=15m" >> .env
+            echo "PORT=3000" >> .env
+            echo "NODE_ENV=production" >> .env
+            echo "GITHUB_REPOSITORY_OWNER=${{ env.OWNER_LC }}" >> .env
             echo "${{ secrets.GH_PACKAGE_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
-            echo GITHUB_REPOSITORY_OWNER=${{ env.OWNER_LC }} > .env
             docker compose -f docker-compose.prod.yml pull
             docker compose -f docker-compose.prod.yml up -d --remove-orphans
             docker system prune -f
