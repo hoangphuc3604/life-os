@@ -139,6 +139,8 @@ jobs:
           script: |
             cd ~/lifeos
 
+            mkdir -p services/auth-service
+
             cat > services/auth-service/.env << 'EOF'
             POSTGRES_HOST=postgres
             POSTGRES_PORT=5432
@@ -160,6 +162,8 @@ jobs:
           key: ${{ secrets.GCP_VM_SSH_KEY }}
           script: |
             cd ~/lifeos
+
+            mkdir -p services/knowledge-service
 
             cat > services/knowledge-service/.env << 'EOF'
             POSTGRES_HOST=postgres
