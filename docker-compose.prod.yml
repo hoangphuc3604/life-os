@@ -13,6 +13,11 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
     restart: unless-stopped
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d ${POSTGRES_DB:-lifeos_auth}"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
 
   auth-service:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/lifeos-auth:latest
@@ -20,8 +25,20 @@ services:
     env_file:
       - .env
     depends_on:
-      - postgres
+      migrate:
+        condition: service_completed_successfully
     restart: unless-stopped
+
+  migrate:
+    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/lifeos-auth:latest
+    container_name: lifeos_migrate
+    env_file:
+      - .env
+    depends_on:
+      postgres:
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy"
+    restart: "no"
 
   api-gateway:
     image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/lifeos-gateway:latest
