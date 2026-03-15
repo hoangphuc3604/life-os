@@ -12,6 +12,8 @@ COPY . .
 
 RUN npx prisma generate
 
+RUN mkdir -p uploads
+
 RUN npm run build
 
 FROM node:22-alpine AS production
