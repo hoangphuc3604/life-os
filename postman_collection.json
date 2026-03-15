@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "c62f22b8-9336-4074-a8eb-9d10ac6ea7ae",
-		"name": "LifeOS API Gateway",
-		"description": "Collection để test API của dự án LifeOS sau khi tích hợp Nginx API Gateway. Bao gồm các tính năng tự động lưu Access Token và Refresh Token vào biến môi trường.",
+		"name": "LifeOS API",
+		"description": "Collection để test API của dự án LifeOS qua Nginx API Gateway.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -25,14 +25,8 @@
 						},
 						"url": {
 							"raw": "{{BASE_URL}}/api/auth/register",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"register"
-							]
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "auth", "register"]
 						}
 					},
 					"response": []
@@ -73,49 +67,14 @@
 						},
 						"url": {
 							"raw": "{{BASE_URL}}/api/auth/login",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"login"
-							]
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "auth", "login"]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "3. Get Profile",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{BASE_URL}}/api/auth/profile",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"profile"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "4. Refresh Token",
+					"name": "3. Refresh Token",
 					"event": [
 						{
 							"listen": "test",
@@ -137,84 +96,27 @@
 						}
 					],
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{REFRESH_TOKEN}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
-						"header": [],
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"refresh_token\": \"{{REFRESH_TOKEN}}\"\r\n}"
+						},
 						"url": {
 							"raw": "{{BASE_URL}}/api/auth/refresh",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"refresh"
-							]
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "auth", "refresh"]
 						}
 					},
 					"response": []
 				},
 				{
-					"name": "5. Logout",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"pm.test(\"Status code is 201 or 200\", function () {",
-									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-									"    pm.environment.unset(\"ACCESS_TOKEN\");",
-									"    pm.environment.unset(\"REFRESH_TOKEN\");",
-									"});"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{ACCESS_TOKEN}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "POST",
-						"header": [],
-						"url": {
-							"raw": "{{BASE_URL}}/api/auth/logout",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"logout"
-							]
-						}
-					},
-					"response": []
-				}
-			],
-			"description": "APIs liên quan đến việc xác thực người dùng."
-		},
-		{
-			"name": "Protected Services (via Gateway)",
-			"item": [
-				{
-					"name": "Test Protected Endpoint",
+					"name": "4. Get Profile",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -229,21 +131,697 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{BASE_URL}}/api/protected/",
-							"host": [
-								"{{BASE_URL}}"
-							],
-							"path": [
-								"api",
-								"protected",
-								""
+							"raw": "{{BASE_URL}}/api/auth/profile",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "auth", "profile"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Logout",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 201 or 200\", function () {",
+									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"refresh_token\": \"{{REFRESH_TOKEN}}\"\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/auth/logout",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "auth", "logout"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Validate Token (Gateway Test)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
 							]
 						},
-						"description": "Thử nghiệm Identity Propagation. Nếu Header Authorization được gửi đi với Access Token hợp lệ, bạn sẽ thấy X-User-Id trả về trong JSON thông qua cổng Gateway."
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/auth/validate",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "auth", "validate"]
+						}
 					},
 					"response": []
 				}
-			]
+			],
+			"description": "APIs xác thực người dùng."
+		},
+		{
+			"name": "Knowledge Service - Folders",
+			"item": [
+				{
+					"name": "1. Get All Folders",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/folders",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "folders"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Create Folder",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"My Notes\",\r\n    \"parentId\": null\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/folders",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "folders"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get Folder by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/folders/:folderId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "folders", ":folderId"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Update Folder",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"name\": \"Updated Folder Name\"\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/folders/:folderId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "folders", ":folderId"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Move Folder",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"parentId\": null\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/folders/:folderId/move",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "folders", ":folderId", "move"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Delete Folder",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/folders/:folderId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "folders", ":folderId"]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "APIs quản lý thư mục."
+		},
+		{
+			"name": "Knowledge Service - Notes",
+			"item": [
+				{
+					"name": "1. Get All Notes",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Get Notes by Folder",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes?folderId=:folderId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes"],
+							"query": [
+								{
+									"key": "folderId",
+									"value": ":folderId"
+								}
+							]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Create Note",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"title\": \"My First Note\",\r\n    \"folderId\": null\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Get Note by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes/:noteId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes", ":noteId"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Update Note",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"title\": \"Updated Note Title\"\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes/:noteId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes", ":noteId"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Move Note",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"folderId\": null\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes/:noteId/move",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes", ":noteId", "move"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "7. Delete Note",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes/:noteId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes", ":noteId"]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "APIs quản lý ghi chú."
+		},
+		{
+			"name": "Knowledge Service - Blocks",
+			"item": [
+				{
+					"name": "1. Get All Blocks in Note",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes/:noteId/blocks",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes", ":noteId", "blocks"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "2. Create Block",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"type\": \"text\",\r\n    \"content\": \"Hello World\"\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes/:noteId/blocks",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes", ":noteId", "blocks"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "3. Get Block by ID",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/blocks/:blockId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "blocks", ":blockId"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "4. Update Block",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"content\": \"Updated content\"\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/blocks/:blockId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "blocks", ":blockId"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "5. Delete Block",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/blocks/:blockId",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "blocks", ":blockId"]
+						}
+					},
+					"response": []
+				},
+				{
+					"name": "6. Reorder Blocks",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "PATCH",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\r\n    \"blockIds\": [\"blockId1\", \"blockId2\", \"blockId3\"]\r\n}"
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/notes/:noteId/blocks/reorder",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "notes", ":noteId", "blocks", "reorder"]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "APIs quản lý blocks trong note."
+		},
+		{
+			"name": "Knowledge Service - Search",
+			"item": [
+				{
+					"name": "Search Notes",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/search?q=keyword&limit=20&offset=0",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "search"],
+							"query": [
+								{
+									"key": "q",
+									"value": "keyword"
+								},
+								{
+									"key": "limit",
+									"value": "20"
+								},
+								{
+									"key": "offset",
+									"value": "0"
+								}
+							]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "API tìm kiếm ghi chú."
+		},
+		{
+			"name": "Knowledge Service - Upload",
+			"item": [
+				{
+					"name": "Upload Image",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{ACCESS_TOKEN}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"body": {
+							"mode": "formdata",
+							"formdata": [
+								{
+									"key": "file",
+									"type": "file",
+									"src": []
+								}
+							]
+						},
+						"url": {
+							"raw": "{{BASE_URL}}/api/knowledge/upload",
+							"host": ["{{BASE_URL}}"],
+							"path": ["api", "knowledge", "upload"]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "API upload file."
 		}
 	],
 	"variable": [

@@ -15,13 +15,7 @@ This project uses ai-devkit for structured AI-assisted development. Phase docume
 ## Code Style & Standards
 - Follow the project's established code style and conventions
 - Write clear, self-documenting code with meaningful variable names
-- **Language**
-  - Explanations must be written in Vietnamese.
-  - Code and docstrings must be written in English.
-
-- **Code Generation Standards**
-  - Strictly prohibit the use of inline comments in code (no `//`, `/* */`, `#`, etc.).
-  - Every generated `function`, `class`, `method`, `interface`, and `type` must include an English docstring for maintainability and future reference.
+- Add comments for complex logic or non-obvious decisions
 
 ## Development Workflow
 - Review phase documentation in `docs/ai/` before implementing features
