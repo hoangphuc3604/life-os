@@ -5,6 +5,7 @@ import { PublicOnlyRoute } from '@/components/auth/PublicOnlyRoute'
 import { HomePage } from '@/pages/HomePage'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
+import { KnowledgeLayout } from '@/components/knowledge/KnowledgeLayout'
 
 export const router = createBrowserRouter([
   {
@@ -16,6 +17,22 @@ export const router = createBrowserRouter([
         element: (
           <ProtectedRoute>
             <HomePage />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'knowledge',
+        element: (
+          <ProtectedRoute>
+            <KnowledgeLayout />
+          </ProtectedRoute>
+        ),
+      },
+      {
+        path: 'knowledge/:noteId',
+        element: (
+          <ProtectedRoute>
+            <KnowledgeLayout />
           </ProtectedRoute>
         ),
       },

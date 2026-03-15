@@ -1,0 +1,68 @@
+generator client {
+  provider      = "prisma-client-js"
+  binaryTargets = ["native", "linux-musl", "linux-musl-openssl-3.0.x"]
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Folder {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  name      String
+  parentId  String?  @map("parent_id")
+  position  Int      @default(0)
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  parent    Folder?  @relation("FolderToFolder", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Folder[] @relation("FolderToFolder")
+  notes     Note[]
+
+  @@index([userId])
+  @@index([parentId])
+  @@map("folders")
+}
+
+model Note {
+  id          String   @id @default(uuid())
+  userId      String   @map("user_id")
+  folderId    String?  @map("folder_id")
+  title       String   @default("Untitled")
+  icon        String?  @default("📝")
+  cover       String?
+  isArchived  Boolean  @default(false) @map("is_archived")
+  isPublished Boolean  @default(false) @map("is_published")
+  position    Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  updatedAt   DateTime @updatedAt @map("updated_at")
+  
+  folder      Folder?  @relation(fields: [folderId], references: [id], onDelete: SetNull)
+  blocks      Block[]
+
+  @@index([userId])
+  @@index([folderId])
+  @@map("notes")
+}
+
+model Block {
+  id        String   @id @default(uuid())
+  noteId    String   @map("note_id")
+  type      String   @default("paragraph")
+  content   Json     @default("{}")
+  properties Json    @default("{}")
+  position  Int      @default(0)
+  parentId  String?  @map("parent_id")
+  createdAt DateTime @default(now()) @map("created_at")
+  updatedAt DateTime @updatedAt @map("updated_at")
+  
+  note      Note     @relation(fields: [noteId], references: [id], onDelete: Cascade)
+  parent    Block?   @relation("BlockToBlock", fields: [parentId], references: [id], onDelete: Cascade)
+  children  Block[] @relation("BlockToBlock")
+
+  @@index([noteId])
+  @@index([parentId])
+  @@map("blocks")
+}

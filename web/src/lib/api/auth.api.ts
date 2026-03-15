@@ -25,33 +25,17 @@ export interface UserProfile {
 
 export const authApi = {
   login: (payload: LoginPayload) =>
-    apiClient<TokensResponse>('/auth/login', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiClient.post<TokensResponse>('/auth/login', payload),
 
   register: (payload: RegisterPayload) =>
-    apiClient<UserProfile>('/auth/register', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    }),
+    apiClient.post<UserProfile>('/auth/register', payload),
 
   refresh: (refreshToken: string) =>
-    apiClient<TokensResponse>('/auth/refresh', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    }),
+    apiClient.post<TokensResponse>('/auth/refresh', { refresh_token: refreshToken }),
 
   logout: (refreshToken: string) =>
-    apiClient<{ message: string }>('/auth/logout', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    }),
+    apiClient.post<{ message: string }>('/auth/logout', { refresh_token: refreshToken }),
 
   getProfile: (accessToken: string) =>
-    apiClient<UserProfile>('/auth/profile', { token: accessToken }),
+    apiClient.get<UserProfile>('/auth/profile', { token: accessToken }),
 }
