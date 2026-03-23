@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import { Folder, Note } from '../lib/api/knowledge.api';
+import { type Folder, type Note } from '../lib/api/knowledge.api';
 
 interface KnowledgeState {
   selectedFolderId: string | null;

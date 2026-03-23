@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Folder, NoteSummary } from '@/lib/api/knowledge.api';
+import { type Folder, type NoteSummary } from '@/lib/api/knowledge.api';
 import { useFolders, useNotes } from '@/hooks/useKnowledge';
 import { useKnowledgeStore } from '@/stores/knowledge.store';
 import { cn } from '@/lib/utils';
