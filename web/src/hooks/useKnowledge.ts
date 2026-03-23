@@ -1,6 +1,6 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useState } from 'react';
-import { knowledgeApi, CreateFolderDto, UpdateFolderDto, MoveFolderDto, CreateNoteDto, UpdateNoteDto, MoveNoteDto, CreateBlockDto, UpdateBlockDto } from '../api/knowledge.api';
+import { knowledgeApi, type CreateFolderDto, type UpdateFolderDto, type MoveFolderDto, type CreateNoteDto, type UpdateNoteDto, type MoveNoteDto, type CreateBlockDto, type UpdateBlockDto } from '../lib/api/knowledge.api';
 
 export const useFolders = () => {
   const queryClient = useQueryClient();

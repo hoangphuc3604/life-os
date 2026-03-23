@@ -36,6 +36,6 @@ export const authApi = {
   logout: (refreshToken: string) =>
     apiClient.post<{ message: string }>('/auth/logout', { refresh_token: refreshToken }),
 
-  getProfile: (accessToken: string) =>
-    apiClient.get<UserProfile>('/auth/profile', { token: accessToken }),
+  getProfile: () =>
+    apiClient.get<UserProfile>('/auth/profile'),
 }

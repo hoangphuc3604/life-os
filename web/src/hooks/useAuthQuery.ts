@@ -17,7 +17,7 @@ export function useLoginMutation() {
     mutationFn: (payload: LoginPayload) => authApi.login(payload),
     onSuccess: async (data) => {
       setTokens(data.access_token, data.refresh_token)
-      const profile = await authApi.getProfile(data.access_token)
+      const profile = await authApi.getProfile()
       setUser(profile)
       queryClient.setQueryData(authKeys.profile, profile)
       navigate('/', { replace: true })
@@ -36,7 +36,7 @@ export function useRegisterMutation() {
     onSuccess: async (_, variables) => {
       const data = await authApi.login({ username: variables.username, password: variables.password })
       setTokens(data.access_token, data.refresh_token)
-      const profile = await authApi.getProfile(data.access_token)
+      const profile = await authApi.getProfile()
       setUser(profile)
       queryClient.setQueryData(authKeys.profile, profile)
       navigate('/', { replace: true })
@@ -46,29 +46,16 @@ export function useRegisterMutation() {
 
 export function useProfileQuery() {
   const accessToken = useAuthStore((s) => s.accessToken)
-  const refreshToken = useAuthStore((s) => s.refreshToken)
-  const setTokens = useAuthStore((s) => s.setTokens)
   const logout = useAuthStore((s) => s.logout)
 
   return useQuery({
     queryKey: authKeys.profile,
     queryFn: async () => {
-      if (!accessToken) return null
       try {
-        return await authApi.getProfile(accessToken)
+        return await authApi.getProfile()
       } catch {
-        if (!refreshToken) {
-          logout()
-          throw new Error('Unauthorized')
-        }
-        try {
-          const data = await authApi.refresh(refreshToken)
-          setTokens(data.access_token, data.refresh_token)
-          return await authApi.getProfile(data.access_token)
-        } catch {
-          logout()
-          throw new Error('Unauthorized')
-        }
+        logout()
+        throw new Error('Unauthorized')
       }
     },
     enabled: !!accessToken,
