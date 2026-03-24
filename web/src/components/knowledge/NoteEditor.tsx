@@ -1,259 +1,324 @@
-import { useEditor, EditorContent } from '@tiptap/react';
-import StarterKit from '@tiptap/starter-kit';
-import Image from '@tiptap/extension-image';
-import Link from '@tiptap/extension-link';
-import Placeholder from '@tiptap/extension-placeholder';
-import TaskList from '@tiptap/extension-task-list';
-import TaskItem from '@tiptap/extension-task-item';
-import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight';
-import { common, createLowlight } from 'lowlight';
-import { useEffect, useCallback } from 'react';
-import { useNote } from '@/hooks/useKnowledge';
-import { useKnowledgeStore } from '@/stores/knowledge.store';
-import { cn } from '@/lib/utils';
-import { Bold, Italic, Strikethrough, Code, List, ListOrdered, CheckSquare, Quote, Heading1, Heading2, Heading3, Image as ImageIcon, Link as LinkIcon, Undo, Redo, Plus } from 'lucide-react';
-import { Button } from '@/components/ui/button';
+import { useEditor, EditorContent } from '@tiptap/react'
+import StarterKit from '@tiptap/starter-kit'
+import Image from '@tiptap/extension-image'
+import Link from '@tiptap/extension-link'
+import Placeholder from '@tiptap/extension-placeholder'
+import TaskList from '@tiptap/extension-task-list'
+import TaskItem from '@tiptap/extension-task-item'
+import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { common, createLowlight } from 'lowlight'
+import { useEffect, useRef, useCallback, useState, type ChangeEvent } from 'react'
+import { useNote, useUpload } from '@/hooks/useKnowledge'
+import { useKnowledgeStore } from '@/stores/knowledge.store'
+import { cn } from '@/lib/utils'
+import {
+  Bold,
+  Italic,
+  Strikethrough,
+  Code,
+  List,
+  ListOrdered,
+  CheckSquare,
+  Quote,
+  Heading1,
+  Heading2,
+  Heading3,
+  Image as ImageIcon,
+  Link as LinkIcon,
+  Undo,
+  Redo,
+  Trash2,
+  Check,
+  Loader2,
+} from 'lucide-react'
+import { Button } from '@/components/ui/button'
 
-const lowlight = createLowlight(common);
+const lowlight = createLowlight(common)
+const AUTO_SAVE_DELAY = 1500
+
+type SaveStatus = 'saved' | 'saving' | 'unsaved' | 'idle'
 
 interface NoteEditorProps {
-  noteId: string;
+  noteId: string
+}
+
+function ToolbarSeparator() {
+  return <div className="w-px h-5 bg-[var(--border)] mx-0.5" />
+}
+
+function ToolbarButton({
+  onClick,
+  active,
+  disabled,
+  title,
+  children,
+}: {
+  onClick: () => void
+  active?: boolean
+  disabled?: boolean
+  title: string
+  children: React.ReactNode
+}) {
+  return (
+    <button
+      type="button"
+      title={title}
+      disabled={disabled}
+      onClick={onClick}
+      className={cn(
+        'flex size-7 items-center justify-center rounded-md text-[var(--text)] transition-colors hover:bg-[var(--code-bg)] hover:text-[var(--text-h)] disabled:opacity-40 disabled:cursor-not-allowed',
+        active && 'bg-[var(--accent-bg)] text-[var(--accent)]',
+      )}
+    >
+      {children}
+    </button>
+  )
 }
 
 export const NoteEditor = ({ noteId }: NoteEditorProps) => {
-  const { note, isLoading, updateNote, updateBlock, createBlock, deleteBlock } = useNote(noteId);
-  const { setSearchOpen } = useKnowledgeStore();
-  
+  const { note, isLoading, updateNote, createBlock, updateBlock } = useNote(noteId)
+  const { setDirty, isDirty } = useKnowledgeStore()
+  const { upload, isUploading } = useUpload()
+
+  const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
+  const [titleValue, setTitleValue] = useState('')
+  const autoSaveTimer = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const contentBlockId = useRef<string | null>(null)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+
   const editor = useEditor({
     extensions: [
-      StarterKit.configure({
-        codeBlock: false,
-      }),
+      StarterKit.configure({ codeBlock: false }),
       Image.configure({
-        HTMLAttributes: {
-          class: 'rounded-md max-w-full',
-        },
+        HTMLAttributes: { class: 'rounded-lg max-w-full my-2' },
       }),
-      Link.configure({
-        openOnClick: false,
-      }),
-      Placeholder.configure({
-        placeholder: 'Start writing...',
-      }),
+      Link.configure({ openOnClick: false }),
+      Placeholder.configure({ placeholder: 'Start writing…' }),
       TaskList,
-      TaskItem.configure({
-        nested: true,
-      }),
-      CodeBlockLowlight.configure({
-        lowlight,
-      }),
+      TaskItem.configure({ nested: true }),
+      CodeBlockLowlight.configure({ lowlight }),
     ],
     content: '',
     editorProps: {
       attributes: {
-        class: 'prose prose-sm sm:prose-base lg:prose-lg xl:prose-xl focus:outline-none min-h-[300px] p-4',
+        class:
+          'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[300px] px-8 py-6 knowledge-prose',
       },
     },
-    onUpdate: ({ editor }) => {
+    onUpdate: () => {
+      setSaveStatus('unsaved')
+      setDirty(true)
+      scheduleAutoSave()
     },
-  });
-  
-  useEffect(() => {
-    if (editor && note?.blocks) {
-      const blocksHtml = note.blocks.map(block => {
-        switch (block.type) {
-          case 'paragraph':
-            return `<p>${block.content?.text || ''}</p>`;
-          case 'heading':
-            return `<h${block.content?.level || 1}>${block.content?.text || ''}</h${block.content?.level || 1}>`;
-          case 'code':
-            return `<pre><code>${block.content?.code || ''}</code></pre>`;
-          case 'image':
-            return `<img src="${block.content?.src || ''}" alt="${block.content?.alt || ''}" />`;
-          default:
-            return `<p>${JSON.stringify(block.content)}</p>`;
-        }
-      }).join('');
-      
-      editor.commands.setContent(`<div>${blocksHtml}</div>`);
+  })
+
+  const scheduleAutoSave = useCallback(() => {
+    if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    autoSaveTimer.current = setTimeout(() => {
+      performSave()
+    }, AUTO_SAVE_DELAY)
+  }, [])
+
+  const performSave = useCallback(async () => {
+    if (!editor || !noteId) return
+    setSaveStatus('saving')
+
+    const json = editor.getJSON()
+
+    try {
+      if (contentBlockId.current) {
+        await updateBlock.mutateAsync({
+          id: contentBlockId.current,
+          data: { type: 'richtext', content: { json } },
+        })
+      } else {
+        const block = await createBlock.mutateAsync({
+          noteId,
+          data: { type: 'richtext', content: { json } },
+        })
+        contentBlockId.current = block.id
+      }
+      setSaveStatus('saved')
+      setDirty(false)
+    } catch {
+      setSaveStatus('unsaved')
     }
-  }, [note, editor]);
-  
-  const addBlock = useCallback((type: string) => {
-    if (!noteId) return;
-    
-    const content: Record<string, any> = {};
-    if (type === 'heading') content.level = 1;
-    if (type === 'code') { content.code = ''; content.language = 'typescript'; }
-    if (type === 'image') { content.src = ''; content.alt = ''; }
-    if (type === 'link') { content.url = ''; content.title = ''; }
-    
-    createBlock.mutate({
-      noteId,
-      data: { type, content, properties: {} }
-    });
-  }, [noteId, createBlock]);
-  
+  }, [editor, noteId, updateBlock, createBlock, setDirty])
+
+  useEffect(() => {
+    if (!editor || !note) return
+
+    setTitleValue(note.title ?? '')
+
+    const richtextBlock = note.blocks?.find((b) => b.type === 'richtext')
+    if (richtextBlock) {
+      contentBlockId.current = richtextBlock.id
+      if (richtextBlock.content?.json) {
+        editor.commands.setContent(richtextBlock.content.json)
+      } else {
+        editor.commands.setContent('')
+      }
+    } else {
+      contentBlockId.current = null
+      editor.commands.setContent('')
+    }
+
+    setSaveStatus('idle')
+    setDirty(false)
+  }, [note?.id])
+
+  useEffect(() => {
+    return () => {
+      if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
+    }
+  }, [])
+
+  const handleTitleChange = (e: ChangeEvent<HTMLInputElement>) => {
+    setTitleValue(e.target.value)
+    setSaveStatus('unsaved')
+    setDirty(true)
+  }
+
+  const handleTitleBlur = () => {
+    if (!noteId || !titleValue.trim()) return
+    updateNote.mutate({ id: noteId, data: { title: titleValue.trim() } })
+    setSaveStatus('saved')
+    setDirty(false)
+  }
+
+  const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !editor) return
+    try {
+      const result = await upload(file)
+      editor.chain().focus().setImage({ src: result.url }).run()
+    } catch {}
+    if (imageInputRef.current) imageInputRef.current.value = ''
+  }
+
+  const setLink = () => {
+    const url = window.prompt('Enter URL')
+    if (!url || !editor) return
+    editor.chain().focus().setLink({ href: url }).run()
+  }
+
   if (isLoading) {
-    return <div className="p-8 text-center text-muted-foreground">Loading note...</div>;
-  }
-  
-  if (!note) {
     return (
-      <div className="p-8 text-center text-muted-foreground">
-        <p>Select a note to start editing</p>
-        <Button variant="outline" className="mt-4" onClick={() => setSearchOpen(true)}>
-          Or search for a note
-        </Button>
+      <div className="flex-1 flex items-center justify-center">
+        <Loader2 className="size-5 animate-spin text-[var(--text)]" />
       </div>
-    );
+    )
   }
-  
+
+  if (!note) return null
+
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-1 p-2 border-b flex-wrap">
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleBold().run()}
-          className={cn(editor?.isActive('bold') && 'bg-accent')}
-        >
-          <Bold className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleItalic().run()}
-          className={cn(editor?.isActive('italic') && 'bg-accent')}
-        >
-          <Italic className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleStrike().run()}
-          className={cn(editor?.isActive('strike') && 'bg-accent')}
-        >
-          <Strikethrough className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleCode().run()}
-          className={cn(editor?.isActive('code') && 'bg-accent')}
-        >
-          <Code className="h-4 w-4" />
-        </Button>
-        
-        <div className="w-px h-6 bg-border mx-1" />
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()}
-          className={cn(editor?.isActive('heading', { level: 1 }) && 'bg-accent')}
-        >
-          <Heading1 className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()}
-          className={cn(editor?.isActive('heading', { level: 2 }) && 'bg-accent')}
-        >
-          <Heading2 className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()}
-          className={cn(editor?.isActive('heading', { level: 3 }) && 'bg-accent')}
-        >
-          <Heading3 className="h-4 w-4" />
-        </Button>
-        
-        <div className="w-px h-6 bg-border mx-1" />
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleBulletList().run()}
-          className={cn(editor?.isActive('bulletList') && 'bg-accent')}
-        >
-          <List className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleOrderedList().run()}
-          className={cn(editor?.isActive('orderedList') && 'bg-accent')}
-        >
-          <ListOrdered className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleTaskList().run()}
-          className={cn(editor?.isActive('taskList') && 'bg-accent')}
-        >
-          <CheckSquare className="h-4 w-4" />
-        </Button>
-        
-        <div className="w-px h-6 bg-border mx-1" />
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleBlockquote().run()}
-          className={cn(editor?.isActive('blockquote') && 'bg-accent')}
-        >
-          <Quote className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().toggleCodeBlock().run()}
-          className={cn(editor?.isActive('codeBlock') && 'bg-accent')}
-        >
-          <Code className="h-4 w-4" />
-        </Button>
-        
-        <div className="w-px h-6 bg-border mx-1" />
-        
-        <Button variant="ghost" size="sm" onClick={() => addBlock('image')}>
-          <ImageIcon className="h-4 w-4" />
-        </Button>
-        <Button variant="ghost" size="sm" onClick={() => addBlock('link')}>
-          <LinkIcon className="h-4 w-4" />
-        </Button>
-        
-        <div className="w-px h-6 bg-border mx-1" />
-        
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().undo().run()}
-          disabled={!editor?.can().undo()}
-        >
-          <Undo className="h-4 w-4" />
-        </Button>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={() => editor?.chain().focus().redo().run()}
-          disabled={!editor?.can().redo()}
-        >
-          <Redo className="h-4 w-4" />
-        </Button>
-        
-        <Button variant="ghost" size="sm" onClick={() => addBlock('paragraph')}>
-          <Plus className="h-4 w-4" />
-        </Button>
+      <div className="flex items-center gap-1 px-4 h-11 border-b border-[var(--border)] shrink-0 flex-wrap">
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Bold">
+          <Bold className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleItalic().run()} active={editor?.isActive('italic')} title="Italic">
+          <Italic className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleStrike().run()} active={editor?.isActive('strike')} title="Strikethrough">
+          <Strikethrough className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleCode().run()} active={editor?.isActive('code')} title="Inline code">
+          <Code className="size-3.5" />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 1 }).run()} active={editor?.isActive('heading', { level: 1 })} title="Heading 1">
+          <Heading1 className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 2 }).run()} active={editor?.isActive('heading', { level: 2 })} title="Heading 2">
+          <Heading2 className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleHeading({ level: 3 }).run()} active={editor?.isActive('heading', { level: 3 })} title="Heading 3">
+          <Heading3 className="size-3.5" />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleBulletList().run()} active={editor?.isActive('bulletList')} title="Bullet list">
+          <List className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleOrderedList().run()} active={editor?.isActive('orderedList')} title="Numbered list">
+          <ListOrdered className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleTaskList().run()} active={editor?.isActive('taskList')} title="Task list">
+          <CheckSquare className="size-3.5" />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Blockquote">
+          <Quote className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive('codeBlock')} title="Code block">
+          <Code className="size-3.5" />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        <ToolbarButton onClick={() => imageInputRef.current?.click()} title="Insert image" disabled={isUploading}>
+          {isUploading ? <Loader2 className="size-3.5 animate-spin" /> : <ImageIcon className="size-3.5" />}
+        </ToolbarButton>
+        <ToolbarButton onClick={setLink} active={editor?.isActive('link')} title="Insert link">
+          <LinkIcon className="size-3.5" />
+        </ToolbarButton>
+
+        <ToolbarSeparator />
+
+        <ToolbarButton onClick={() => editor?.chain().focus().undo().run()} disabled={!editor?.can().undo()} title="Undo">
+          <Undo className="size-3.5" />
+        </ToolbarButton>
+        <ToolbarButton onClick={() => editor?.chain().focus().redo().run()} disabled={!editor?.can().redo()} title="Redo">
+          <Redo className="size-3.5" />
+        </ToolbarButton>
+
+        <div className="ml-auto flex items-center gap-1.5 text-xs text-[var(--text)]">
+          {saveStatus === 'saving' && (
+            <>
+              <Loader2 className="size-3 animate-spin" />
+              <span>Saving…</span>
+            </>
+          )}
+          {saveStatus === 'saved' && (
+            <>
+              <Check className="size-3 text-green-500" />
+              <span>Saved</span>
+            </>
+          )}
+          {saveStatus === 'unsaved' && <span className="text-[var(--text)]">Unsaved changes</span>}
+        </div>
       </div>
-      
+
       <div className="flex-1 overflow-auto">
-        <EditorContent editor={editor} className="h-full" />
+        <div className="max-w-[760px] mx-auto">
+          <div className="px-8 pt-8 pb-2">
+            <input
+              type="text"
+              value={titleValue}
+              onChange={handleTitleChange}
+              onBlur={handleTitleBlur}
+              placeholder="Untitled"
+              className="w-full bg-transparent text-3xl font-bold text-[var(--text-h)] outline-none placeholder:text-[var(--border)] resize-none"
+            />
+          </div>
+          <EditorContent editor={editor} />
+        </div>
       </div>
+
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageUpload}
+      />
     </div>
-  );
-};
+  )
+}
