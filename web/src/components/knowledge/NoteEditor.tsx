@@ -43,7 +43,7 @@ interface NoteEditorProps {
 }
 
 function ToolbarSeparator() {
-  return <div className="w-px h-5 bg-[var(--border)] mx-0.5" />
+  return <div className="w-px h-5 bg-border mx-0.5" />
 }
 
 function ToolbarButton({
@@ -60,18 +60,16 @@ function ToolbarButton({
   children: React.ReactNode
 }) {
   return (
-    <button
-      type="button"
+    <Button
+      variant={active ? 'secondary' : 'ghost'}
+      size="icon"
+      className="size-7"
       title={title}
       disabled={disabled}
       onClick={onClick}
-      className={cn(
-        'flex size-7 items-center justify-center rounded-md text-[var(--text)] transition-colors hover:bg-[var(--code-bg)] hover:text-[var(--text-h)] disabled:opacity-40 disabled:cursor-not-allowed',
-        active && 'bg-[var(--accent-bg)] text-[var(--accent)]',
-      )}
     >
       {children}
-    </button>
+    </Button>
   )
 }
 
@@ -205,7 +203,7 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <Loader2 className="size-5 animate-spin text-[var(--text)]" />
+        <Loader2 className="size-5 animate-spin text-muted-foreground" />
       </div>
     )
   }
@@ -214,7 +212,7 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
 
   return (
     <div className="flex flex-col h-full">
-      <div className="flex items-center gap-1 px-4 h-11 border-b border-[var(--border)] shrink-0 flex-wrap">
+      <div className="flex items-center gap-1 px-4 h-11 border-b shrink-0 flex-wrap">
         <ToolbarButton onClick={() => editor?.chain().focus().toggleBold().run()} active={editor?.isActive('bold')} title="Bold">
           <Bold className="size-3.5" />
         </ToolbarButton>
@@ -279,7 +277,7 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
           <Redo className="size-3.5" />
         </ToolbarButton>
 
-        <div className="ml-auto flex items-center gap-1.5 text-xs text-[var(--text)]">
+        <div className="ml-auto flex items-center gap-1.5 text-xs text-muted-foreground">
           {saveStatus === 'saving' && (
             <>
               <Loader2 className="size-3 animate-spin" />
@@ -292,7 +290,7 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
               <span>Saved</span>
             </>
           )}
-          {saveStatus === 'unsaved' && <span className="text-[var(--text)]">Unsaved changes</span>}
+          {saveStatus === 'unsaved' && <span className="text-muted-foreground">Unsaved changes</span>}
         </div>
       </div>
 
@@ -305,7 +303,7 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
               onChange={handleTitleChange}
               onBlur={handleTitleBlur}
               placeholder="Untitled"
-              className="w-full bg-transparent text-3xl font-bold text-[var(--text-h)] outline-none placeholder:text-[var(--border)] resize-none"
+              className="w-full bg-transparent text-3xl font-bold text-foreground outline-none placeholder:text-muted-foreground resize-none"
             />
           </div>
           <EditorContent editor={editor} />

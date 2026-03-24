@@ -26,8 +26,8 @@ import { Button } from '@/components/ui/button'
 function SkeletonItem({ indent = 0 }: { indent?: number }) {
   return (
     <div className="flex items-center gap-2 px-2 py-1.5" style={{ paddingLeft: `${indent + 8}px` }}>
-      <div className="size-4 rounded bg-[var(--border)] animate-pulse" />
-      <div className="h-3 w-24 rounded bg-[var(--border)] animate-pulse" />
+      <div className="size-4 rounded bg-muted animate-pulse" />
+      <div className="h-3 w-24 rounded bg-muted animate-pulse" />
     </div>
   )
 }
@@ -47,8 +47,8 @@ function NoteItem({ note, indent }: NoteItemProps) {
       className={cn(
         'flex w-full items-center gap-2 rounded-lg py-1.5 text-left text-sm transition-colors',
         isSelected
-          ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
-          : 'text-[var(--text)] hover:bg-[var(--code-bg)] hover:text-[var(--text-h)]',
+          ? 'bg-accent text-accent-foreground'
+          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
       )}
       style={{ paddingLeft: `${indent}px`, paddingRight: '8px' }}
       onClick={() => setSelectedNote(note.id)}
@@ -116,8 +116,8 @@ function FolderItem({ folder, level }: FolderItemProps) {
         className={cn(
           'group flex items-center gap-1 rounded-lg py-1.5 cursor-pointer transition-colors',
           isSelected
-            ? 'bg-[var(--code-bg)] text-[var(--text-h)]'
-            : 'text-[var(--text)] hover:bg-[var(--code-bg)] hover:text-[var(--text-h)]',
+            ? 'bg-muted text-foreground'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         )}
         style={{ paddingLeft: `${indent}px`, paddingRight: '4px' }}
         onClick={() => {
@@ -151,7 +151,7 @@ function FolderItem({ folder, level }: FolderItemProps) {
                 setIsEditing(false)
               }
             }}
-            className="flex-1 min-w-0 bg-transparent border border-[var(--accent-border)] rounded px-1 text-sm outline-none"
+            className="flex-1 min-w-0 bg-transparent border border-primary rounded px-1 text-sm outline-none"
             autoFocus
             onClick={(e) => e.stopPropagation()}
           />
@@ -229,15 +229,15 @@ function AllNotesSection() {
         className={cn(
           'flex w-full items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium transition-colors',
           isSelected
-            ? 'bg-[var(--accent-bg)] text-[var(--accent)]'
-            : 'text-[var(--text)] hover:bg-[var(--code-bg)] hover:text-[var(--text-h)]',
+            ? 'bg-accent text-accent-foreground'
+            : 'text-muted-foreground hover:bg-muted hover:text-foreground',
         )}
         onClick={() => setSelectedFolder(null)}
       >
         <FileText className="size-4 shrink-0" />
         <span>All Notes</span>
         {notes && (
-          <span className="ml-auto text-xs text-[var(--text)]">{notes.length}</span>
+          <span className="ml-auto text-xs text-muted-foreground">{notes.length}</span>
         )}
       </button>
     </div>
@@ -267,7 +267,7 @@ export const FolderTree = () => {
       <AllNotesSection />
 
       <div className="flex items-center justify-between px-2 py-1 mt-2">
-        <span className="text-xs font-semibold uppercase tracking-wider text-[var(--text)]">
+        <span className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
           Folders
         </span>
         <Button
@@ -293,7 +293,7 @@ export const FolderTree = () => {
               if (e.key === 'Enter') handleCreateFolder()
               if (e.key === 'Escape') setIsCreating(false)
             }}
-            className="w-full rounded-lg border border-[var(--accent-border)] bg-[var(--bg)] px-2 py-1.5 text-sm outline-none"
+            className="w-full rounded-lg border border-primary bg-background px-2 py-1.5 text-sm outline-none"
             autoFocus
           />
         </div>
@@ -311,7 +311,7 @@ export const FolderTree = () => {
             <FolderItem key={folder.id} folder={folder} level={0} />
           ))}
           {(!folders || folders.length === 0) && !isCreating && (
-            <p className="px-2 py-4 text-center text-xs text-[var(--text)]">
+            <p className="px-2 py-4 text-center text-xs text-muted-foreground">
               No folders yet
             </p>
           )}
