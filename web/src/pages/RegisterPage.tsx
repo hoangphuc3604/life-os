@@ -19,7 +19,18 @@ export function RegisterPage() {
 
   return (
     <div className="flex min-h-svh w-full items-center justify-center bg-[var(--bg)] px-4">
-      <Card className="w-full max-w-[400px]">
+      <div className="flex w-full max-w-[400px] flex-col items-center gap-6">
+        <Link
+          to="/"
+          className="flex size-24 shrink-0 items-center justify-center overflow-hidden rounded-2xl ring-1 ring-border/60"
+        >
+          <img
+            src="/logo-removebg-preview.png"
+            alt="LIFEOS"
+            className="h-full w-full object-cover object-center"
+          />
+        </Link>
+        <Card className="w-full">
         <CardHeader className="space-y-1 text-center">
           <CardTitle className="text-2xl font-semibold text-[var(--text-h)]">Create an account</CardTitle>
           <CardDescription>Enter your details to get started</CardDescription>
@@ -74,15 +85,16 @@ export function RegisterPage() {
             <Button type="submit" className="w-full" disabled={register.isPending}>
               {register.isPending ? 'Creating account…' : 'Sign up'}
             </Button>
-            <p className="text-center text-sm text-[var(--text)]">
+            <p className="text-center text-sm text-muted-foreground">
               Already have an account?{' '}
-              <Link to="/login" className="font-medium text-[var(--accent)] hover:underline">
+              <Link to="/login" className="font-medium text-primary hover:underline">
                 Sign in
               </Link>
             </p>
           </CardFooter>
         </form>
       </Card>
+      </div>
     </div>
   )
 }
