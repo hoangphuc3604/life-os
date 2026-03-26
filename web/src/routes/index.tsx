@@ -22,16 +22,19 @@ export const router = createBrowserRouter([
         children: [
           {
             index: true,
+            handle: { title: 'Dashboard' },
             element: <HomePage />,
           },
           {
             path: 'knowledge',
+            handle: { title: 'Knowledge' },
             element: <KnowledgePage />,
           },
         ],
       },
       {
         path: 'login',
+        handle: { title: 'Sign in' },
         element: (
           <PublicOnlyRoute>
             <LoginPage />
@@ -40,6 +43,7 @@ export const router = createBrowserRouter([
       },
       {
         path: 'register',
+        handle: { title: 'Create account' },
         element: (
           <PublicOnlyRoute>
             <RegisterPage />
