@@ -10,7 +10,6 @@ import { common, createLowlight } from 'lowlight'
 import { useEffect, useRef, useCallback, useState, type ChangeEvent } from 'react'
 import { useNote, useUpload } from '@/hooks/useKnowledge'
 import { useKnowledgeStore } from '@/stores/knowledge.store'
-import { cn } from '@/lib/utils'
 import {
   Bold,
   Italic,
@@ -27,7 +26,6 @@ import {
   Link as LinkIcon,
   Undo,
   Redo,
-  Trash2,
   Check,
   Loader2,
 } from 'lucide-react'
@@ -163,7 +161,7 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
 
     setSaveStatus('idle')
     setDirty(false)
-  }, [note?.id])
+  }, [note?.id, note?.title])
 
   useEffect(() => {
     return () => {
