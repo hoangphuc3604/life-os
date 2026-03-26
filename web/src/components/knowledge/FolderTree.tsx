@@ -1,5 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import { useFolders, useNotes } from '@/hooks/useKnowledge'
+import { knowledgeApi } from '@/lib/api/knowledge.api'
+import { useQueryClient } from '@tanstack/react-query'
 import { useKnowledgeStore } from '@/stores/knowledge.store'
 import { type Folder, type Note } from '@/lib/api/knowledge.api'
 import { cn } from '@/lib/utils'
@@ -7,6 +9,7 @@ import {
   ChevronRight,
   ChevronDown,
   Folder as FolderIcon,
+  FolderPlus,
   FileText,
   MoreHorizontal,
   Plus,
@@ -39,25 +42,143 @@ interface NoteItemProps {
 
 function NoteItem({ note, indent }: NoteItemProps) {
   const { selectedNoteId, setSelectedNote } = useKnowledgeStore()
+  const queryClient = useQueryClient()
+  const [isEditing, setIsEditing] = useState(false)
+  const [editName, setEditName] = useState(note.title || 'Untitled')
+  const inputRef = useRef<HTMLInputElement>(null)
+
   const isSelected = selectedNoteId === note.id
 
+  const commitRename = useCallback(() => {
+    const trimmed = editName.trim()
+    if (trimmed && trimmed !== note.title) {
+      const oldTitle = note.title
+
+      // Update folders cache (used by FolderTree for rendering note titles)
+      queryClient.setQueryData<(Folder & { notes?: { title: string }[] })[]>(['folders'], (old) => {
+        if (!old) return old
+        return old.map((folder) => ({
+          ...folder,
+          notes: folder.notes?.map((n) =>
+            n.id === note.id ? { ...n, title: trimmed } : n,
+          ),
+        }))
+      })
+
+      // Update note detail cache (used by NoteEditor)
+      queryClient.setQueryData(['note', note.id], (old: any) =>
+        old ? { ...old, title: trimmed } : old,
+      )
+
+      knowledgeApi.notes.update(note.id, { title: trimmed }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['notes'] })
+        queryClient.invalidateQueries({ queryKey: ['folders'] })
+        queryClient.invalidateQueries({ queryKey: ['note', note.id] })
+      }).catch(() => {
+        // Revert on failure
+        queryClient.setQueryData<(Folder & { notes?: { title: string }[] })[]>(['folders'], (old) => {
+          if (!old) return old
+          return old.map((folder) => ({
+            ...folder,
+            notes: folder.notes?.map((n) =>
+              n.id === note.id ? { ...n, title: oldTitle } : n,
+            ),
+          }))
+        })
+        queryClient.setQueryData(['note', note.id], (old: any) =>
+          old ? { ...old, title: oldTitle } : old,
+        )
+      })
+    } else {
+      setEditName(note.title || 'Untitled')
+    }
+    setIsEditing(false)
+  }, [editName, note.id, note.title, queryClient])
+
+  const handleDelete = () => {
+    if (confirm(`Delete "${note.title || 'Untitled'}"?`)) {
+      knowledgeApi.notes.delete(note.id).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['notes'] })
+        queryClient.invalidateQueries({ queryKey: ['folders'] })
+        queryClient.invalidateQueries({ queryKey: ['note', note.id] })
+      })
+    }
+  }
+
   return (
-    <button
-      type="button"
-      className={cn(
-        'flex w-full items-center gap-2 rounded-lg py-1.5 text-left text-sm transition-colors',
-        isSelected
-          ? 'bg-accent text-accent-foreground'
-          : 'text-muted-foreground hover:bg-muted hover:text-foreground',
-      )}
-      style={{ paddingLeft: `${indent}px`, paddingRight: '8px' }}
+    <div className="group flex items-center gap-1 rounded-lg py-1.5 cursor-pointer transition-colors"
+      style={{ paddingLeft: `${indent}px`, paddingRight: '4px' }}
       onClick={() => setSelectedNote(note.id)}
     >
       <FileText className="size-4 shrink-0 opacity-60" />
-      <span className="truncate flex-1">
-        {note.icon ? `${note.icon} ${note.title}` : note.title || 'Untitled'}
-      </span>
-    </button>
+
+      {isEditing ? (
+        <input
+          ref={inputRef}
+          type="text"
+          value={editName}
+          onChange={(e) => setEditName(e.target.value)}
+          onBlur={commitRename}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter') commitRename()
+            if (e.key === 'Escape') {
+              setEditName(note.title || 'Untitled')
+              setIsEditing(false)
+            }
+          }}
+          className="flex-1 min-w-0 bg-transparent border border-primary rounded px-1 text-sm text-foreground outline-none"
+          autoFocus
+          onClick={(e) => e.stopPropagation()}
+        />
+      ) : (
+        <span
+          className={cn(
+            'flex-1 truncate text-sm',
+            isSelected ? 'text-foreground font-medium' : 'text-muted-foreground',
+          )}
+          onDoubleClick={(e) => {
+            e.stopPropagation()
+            setIsEditing(true)
+          }}
+        >
+          {note.icon ? `${note.icon} ${note.title}` : note.title || 'Untitled'}
+        </span>
+      )}
+
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild onClick={(e) => e.stopPropagation()}>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="size-6 opacity-0 group-hover:opacity-100 focus:opacity-100 shrink-0"
+          >
+            <MoreHorizontal className="size-3.5" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="start" className="w-40">
+          <DropdownMenuItem
+            onClick={(e) => {
+              e.stopPropagation()
+              setIsEditing(true)
+            }}
+          >
+            <Pencil className="size-4 mr-2" />
+            Rename
+          </DropdownMenuItem>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            className="text-red-500 focus:text-red-500"
+            onClick={(e) => {
+              e.stopPropagation()
+              handleDelete()
+            }}
+          >
+            <Trash2 className="size-4 mr-2" />
+            Delete
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    </div>
   )
 }
 
@@ -74,7 +195,7 @@ function FolderItem({ folder, level }: FolderItemProps) {
     setSelectedNote,
     toggleFolderExpanded,
   } = useKnowledgeStore()
-  const { updateFolder, deleteFolder } = useFolders()
+  const { updateFolder, deleteFolder, createFolder } = useFolders()
   const { createNote } = useNotes(folder.id)
 
   const isExpanded = expandedFolders.has(folder.id)
@@ -105,8 +226,13 @@ function FolderItem({ folder, level }: FolderItemProps) {
   const handleAddNote = () => {
     createNote.mutate(
       { title: 'Untitled', folderId: folder.id },
-      { onSuccess: (note) => setSelectedNote(note.id) },
+      { onSuccess: (note: Note) => setSelectedNote(note.id) },
     )
+    if (!isExpanded) toggleFolderExpanded(folder.id)
+  }
+
+  const handleAddFolder = () => {
+    createFolder.mutate({ name: 'Untitled', parentId: folder.id })
     if (!isExpanded) toggleFolderExpanded(folder.id)
   }
 
@@ -180,7 +306,11 @@ function FolderItem({ folder, level }: FolderItemProps) {
           <DropdownMenuContent align="start" className="w-44">
             <DropdownMenuItem onClick={handleAddNote}>
               <FilePlus className="size-4 mr-2" />
-              New note inside
+              New note
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={handleAddFolder}>
+              <FolderPlus className="size-4 mr-2" />
+              New folder
             </DropdownMenuItem>
             <DropdownMenuItem
               onClick={(e) => {
