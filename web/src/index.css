@@ -2,6 +2,7 @@
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
 @import "prosemirror-view/style/prosemirror.css";
+@import "highlight.js/styles/github-dark.css";
 
 :root {
   --background: oklch(1 0 0);
@@ -249,34 +250,48 @@
   text-underline-offset: 2px;
 }
 .knowledge-prose strong { color: var(--foreground); font-weight: 600; }
-.knowledge-prose ul[data-type="taskList"] { list-style: none; padding-left: 0; }
-.knowledge-prose ul[data-type="taskList"] > li {
+.knowledge-prose ul[data-type="taskList"] {
+  list-style: none;
+  padding-left: 0;
+  margin: 0.5em 0;
+}
+.knowledge-prose li[data-type="taskItem"] {
   display: flex;
+  flex-direction: row;
   align-items: flex-start;
   gap: 0.5em;
   margin: 0.2em 0;
+  list-style: none;
 }
-.knowledge-prose ul[data-type="taskList"] > li > label {
+.knowledge-prose li[data-type="taskItem"] > label {
   flex-shrink: 0;
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  margin-top: 3px;
+  user-select: none;
   cursor: pointer;
+  margin: 0;
+  padding: 0;
 }
-.knowledge-prose ul[data-type="taskList"] > li > label > input[type="checkbox"] {
+.knowledge-prose li[data-type="taskItem"] > label > input[type="checkbox"] {
   width: 15px;
   height: 15px;
   accent-color: var(--primary);
   cursor: pointer;
   margin: 0;
+  padding: 0;
+  flex-shrink: 0;
 }
-.knowledge-prose ul[data-type="taskList"] > li > div {
-  display: flex;
-  align-items: flex-start;
-  flex: 1;
+.knowledge-prose li[data-type="taskItem"] > div {
+  flex: 1 1 0%;
   min-width: 0;
 }
-.knowledge-prose ul[data-type="taskList"] > li[data-checked="true"] > div {
+.knowledge-prose li[data-type="taskItem"] > div > p {
+  margin: 0;
+}
+.knowledge-prose li[data-type="taskItem"] > div > p + p {
+  margin-top: 0.35em;
+}
+.knowledge-prose li[data-type="taskItem"][data-checked="true"] > div {
   text-decoration: line-through;
   color: var(--muted-foreground);
 }
@@ -286,4 +301,38 @@
   float: left;
   height: 0;
   pointer-events: none;
+}
+
+/* Code block wrapper with language selector (top-right corner, appears on hover) */
+.codeblock-wrapper {
+  position: relative;
+  border-radius: 8px;
+  overflow: visible !important;
+}
+.codeblock-wrapper:hover {
+  box-shadow: 0 0 0 1px color-mix(in srgb, var(--primary) 20%, transparent);
+}
+.codeblock-wrapper .lang-selector {
+  position: absolute;
+  top: 0.5rem;
+  right: 0.5rem;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 150ms ease;
+  z-index: 50;
+}
+.codeblock-wrapper:hover .lang-selector {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+/* Ensure Radix SelectContent portal is visible */
+[data-radix-popper-content-wrapper] {
+  z-index: 50;
+}
+
+/* Code block with language selector - add top padding to make room for language label */
+.knowledge-prose pre.code-block-with-lang {
+  padding-top: 2rem;
+  overflow: visible !important;
 }

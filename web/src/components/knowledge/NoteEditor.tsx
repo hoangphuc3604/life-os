@@ -3,10 +3,26 @@ import StarterKit from '@tiptap/starter-kit'
 import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
-import TaskList from '@tiptap/extension-task-list'
-import TaskItem from '@tiptap/extension-task-item'
+import { Node, mergeAttributes, wrappingInputRule } from '@tiptap/core'
+import '@tiptap/extension-code-block'
 import CodeBlockLowlight from '@tiptap/extension-code-block-lowlight'
+import { ReactNodeViewRenderer, NodeViewWrapper, type NodeViewProps } from '@tiptap/react'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { common, createLowlight } from 'lowlight'
+
+declare module '@tiptap/extension-code-block-lowlight' {
+  interface CodeBlockLowlightOptions {
+    addNodeView?: () => ReturnType<typeof ReactNodeViewRenderer>
+  }
+}
+
+declare module '@tiptap/core' {
+  interface Commands<ReturnType> {
+    taskList: {
+      toggleTaskList: () => ReturnType
+    }
+  }
+}
 import { useEffect, useRef, useCallback, useState, type ChangeEvent } from 'react'
 import { useNote, useUpload } from '@/hooks/useKnowledge'
 import { useKnowledgeStore } from '@/stores/knowledge.store'
@@ -15,7 +31,6 @@ import {
   Italic,
   Strikethrough,
   Code,
-  CodeSquare,
   List,
   ListOrdered,
   CheckSquare,
@@ -29,6 +44,7 @@ import {
   Redo,
   Check,
   Loader2,
+  ChevronDown,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
@@ -72,6 +88,286 @@ function ToolbarButton({
   )
 }
 
+const TaskList = Node.create({
+  name: 'taskList',
+  addOptions() {
+    return { itemTypeName: 'taskItem', HTMLAttributes: {} }
+  },
+  group: 'block list',
+  content() {
+    return `${this.options.itemTypeName}+`
+  },
+  parseHTML() {
+    return [{ tag: 'ul[data-type="taskList"]', priority: 51 }]
+  },
+  renderHTML({ HTMLAttributes }) {
+    return [
+      'ul',
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        'data-type': this.name,
+        style: 'list-style: none; padding-left: 0; margin: 0.5em 0;',
+      }),
+      0,
+    ]
+  },
+  addCommands() {
+    return {
+      toggleTaskList:
+        () =>
+        (props): boolean => {
+          const { commands } = props
+          return commands.toggleList(this.name, this.options.itemTypeName)
+        },
+    }
+  },
+  addKeyboardShortcuts() {
+    return { 'Mod-Shift-9': () => this.editor.commands.toggleTaskList() }
+  },
+})
+
+const inputRegex = /^\s*(\[([( |x])?\])\s$/
+
+const CODE_LANGUAGES = [
+  { value: 'plaintext', label: 'Plain text' },
+  { value: 'javascript', label: 'JavaScript' },
+  { value: 'typescript', label: 'TypeScript' },
+  { value: 'python', label: 'Python' },
+  { value: 'cpp', label: 'C++' },
+  { value: 'c', label: 'C' },
+  { value: 'java', label: 'Java' },
+  { value: 'csharp', label: 'C#' },
+  { value: 'go', label: 'Go' },
+  { value: 'rust', label: 'Rust' },
+  { value: 'ruby', label: 'Ruby' },
+  { value: 'php', label: 'PHP' },
+  { value: 'swift', label: 'Swift' },
+  { value: 'kotlin', label: 'Kotlin' },
+  { value: 'sql', label: 'SQL' },
+  { value: 'bash', label: 'Bash' },
+  { value: 'shell', label: 'Shell' },
+  { value: 'powershell', label: 'PowerShell' },
+  { value: 'html', label: 'HTML' },
+  { value: 'css', label: 'CSS' },
+  { value: 'scss', label: 'SCSS' },
+  { value: 'json', label: 'JSON' },
+  { value: 'yaml', label: 'YAML' },
+  { value: 'xml', label: 'XML' },
+  { value: 'markdown', label: 'Markdown' },
+  { value: 'docker', label: 'Docker' },
+  { value: 'graphql', label: 'GraphQL' },
+  { value: 'lua', label: 'Lua' },
+  { value: 'r', label: 'R' },
+  { value: 'scala', label: 'Scala' },
+  { value: 'dart', label: 'Dart' },
+  { value: 'elixir', label: 'Elixir' },
+  { value: 'haskell', label: 'Haskell' },
+  { value: 'vim', label: 'Vim' },
+]
+
+function CodeBlockNodeView({ node, updateAttributes }: NodeViewProps) {
+  const language = node.attrs.language ?? 'plaintext'
+  const [isOpen, setIsOpen] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
+  const selectedLang = CODE_LANGUAGES.find(l => l.value === language) ?? CODE_LANGUAGES[0]
+
+  useEffect(() => {
+    fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:mount",message:"Mount",data:{language},timestamp:Date.now(),hypothesisId:"A",runId:"debug-run"})}).catch(()=>{});
+  }, [])
+
+  const handleMouseEnter = () => {
+    setIsHovered(true)
+    fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:enter",message:"Enter",data:{language, isHovered: true},timestamp:Date.now(),hypothesisId:"A",runId:"debug-run"})}).catch(()=>{});
+  }
+
+  const handleMouseLeave = () => {
+    setIsHovered(false)
+    fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:leave",message:"Leave",data:{language, isHovered: false},timestamp:Date.now(),hypothesisId:"A",runId:"debug-run"})}).catch(()=>{});
+  }
+
+  fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:render",message:"Render",data:{language, isHovered, isOpen},timestamp:Date.now(),hypothesisId:"A",runId:"debug-run"})}).catch(()=>{});
+
+  return (
+    <NodeViewWrapper>
+      <div
+        className="codeblock-wrapper code-block-with-lang"
+        data-language={language}
+      >
+        <pre>
+          <code>{/* lowlight injects hljs-* spans here */}</code>
+        </pre>
+
+        {/* Language selector - always visible for testing */}
+        <div
+          className="lang-selector"
+          contentEditable={false}
+          style={{ opacity: 1, pointerEvents: "auto" }}
+        >
+          {isOpen ? (
+            <Select
+              value={language}
+              open
+              onOpenChange={(open) => setIsOpen(open)}
+              onValueChange={(value) => {
+                updateAttributes({ language: value })
+                setIsOpen(false)
+              }}
+            >
+              <SelectTrigger className="h-6 min-w-[120px] text-xs bg-muted/80 backdrop-blur-sm border-border/50">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="max-h-[200px]">
+                {CODE_LANGUAGES.map((lang) => (
+                  <SelectItem key={lang.value} value={lang.value}>
+                    {lang.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          ) : (
+            <button
+              className="h-6 px-2 text-xs bg-muted/80 backdrop-blur-sm border border-border/50 rounded hover:bg-muted transition-colors flex items-center gap-1"
+              onClick={() => setIsOpen(true)}
+            >
+              <span>{selectedLang.label}</span>
+              <ChevronDown className="size-3" />
+            </button>
+          )}
+        </div>
+      </div>
+    </NodeViewWrapper>
+  )
+}
+
+const TaskItem = Node.create({
+  name: 'taskItem',
+  addOptions() {
+    return {
+      nested: false,
+      HTMLAttributes: {},
+      taskListTypeName: 'taskList',
+    }
+  },
+  content() {
+    return this.options.nested ? 'paragraph block*' : 'paragraph+'
+  },
+  defining: true,
+  addAttributes() {
+    return {
+      checked: {
+        default: false,
+        keepOnSplit: false,
+        parseHTML: (element) => {
+          const dataChecked = element.getAttribute('data-checked')
+          return dataChecked === '' || dataChecked === 'true'
+        },
+        renderHTML: (attributes) => ({
+          'data-checked': String(attributes.checked),
+        }),
+      },
+    }
+  },
+  parseHTML() {
+    return [{ tag: 'li[data-type="taskItem"]', priority: 51 }]
+  },
+  renderHTML({ node, HTMLAttributes }) {
+    return [
+      'li',
+      mergeAttributes(this.options.HTMLAttributes, HTMLAttributes, {
+        'data-type': this.name,
+      }),
+      [
+        'label',
+        ['input', { type: 'checkbox', checked: node.attrs.checked ? 'checked' : null }],
+        ['span'],
+      ],
+      ['div', 0],
+    ]
+  },
+  addKeyboardShortcuts() {
+    const shortcuts = {
+      Enter: () => this.editor.commands.splitListItem(this.name),
+      'Shift-Tab': () => this.editor.commands.liftListItem(this.name),
+    }
+    if (!this.options.nested) return shortcuts
+    return { ...shortcuts, Tab: () => this.editor.commands.sinkListItem(this.name) }
+  },
+  addNodeView() {
+    return ({ node, HTMLAttributes, getPos, editor }) => {
+      const listItem = document.createElement('li')
+      const checkboxWrapper = document.createElement('label')
+      const checkbox = document.createElement('input')
+      const content = document.createElement('div')
+
+      listItem.setAttribute('data-type', 'taskItem')
+      listItem.setAttribute('data-checked', String(node.attrs.checked))
+      listItem.style.cssText =
+        'display: flex !important; flex-direction: row !important; align-items: flex-start !important; list-style: none !important; margin: 0.2em 0 !important;'
+
+      checkbox.type = 'checkbox'
+      checkbox.checked = node.attrs.checked
+      checkbox.style.cssText =
+        'width: 15px !important; height: 15px !important; accent-color: var(--primary); cursor: pointer; margin: 0 !important; padding: 0 !important; flex-shrink: 0;'
+
+      checkboxWrapper.contentEditable = 'false'
+      checkboxWrapper.style.cssText =
+        'flex-shrink: 0 !important; display: inline-flex !important; align-items: center; user-select: none; cursor: pointer; margin: 0; padding: 0;'
+      checkboxWrapper.appendChild(checkbox)
+
+      content.style.cssText = 'flex: 1 1 0%; min-width: 0;'
+      listItem.appendChild(checkboxWrapper)
+      listItem.appendChild(content)
+
+      Object.entries(this.options.HTMLAttributes as Record<string, string>).forEach(([key, value]) => {
+        listItem.setAttribute(key, value)
+      })
+      Object.entries(HTMLAttributes as Record<string, string>).forEach(([key, value]) => {
+        listItem.setAttribute(key, value)
+      })
+
+      checkbox.addEventListener('mousedown', (e) => e.preventDefault())
+      checkbox.addEventListener('change', (e) => {
+        const { checked } = e.target as HTMLInputElement
+        if (!editor.isEditable && typeof getPos === 'function') {
+          editor
+            .chain()
+            .focus(undefined, { scrollIntoView: false })
+            .command(({ tr }) => {
+              const position = getPos()
+              if (typeof position !== 'number') return false
+              const currentNode = tr.doc.nodeAt(position)
+              tr.setNodeMarkup(position, undefined, {
+                ...currentNode?.attrs,
+                checked,
+              })
+              return true
+            })
+            .run()
+        }
+      })
+
+      return {
+        dom: listItem,
+        contentDOM: content,
+        update: (updatedNode) => {
+          if (updatedNode.type !== this.type) return false
+          listItem.dataset.checked = String(updatedNode.attrs.checked)
+          checkbox.checked = updatedNode.attrs.checked
+          return true
+        },
+      }
+    }
+  },
+  addInputRules() {
+    return [
+      wrappingInputRule({
+        find: inputRegex,
+        type: this.type,
+        getAttributes: (match) => ({ checked: match[match.length - 1] === 'x' }),
+      }),
+    ]
+  },
+})
+
 export const NoteEditor = ({ noteId }: NoteEditorProps) => {
   const { note, isLoading, updateNote, createBlock, updateBlock } = useNote(noteId)
   const { setDirty } = useKnowledgeStore()
@@ -93,13 +389,15 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
       Placeholder.configure({ placeholder: 'Start writing…' }),
       TaskList,
       TaskItem.configure({ nested: true }),
-      CodeBlockLowlight.configure({ lowlight }),
+      CodeBlockLowlight.configure({
+        lowlight,
+        addNodeView: () => ReactNodeViewRenderer(CodeBlockNodeView),
+      }),
     ],
     content: '',
     editorProps: {
       attributes: {
-        class:
-          'max-w-none focus:outline-none min-h-[300px] px-8 py-6 knowledge-prose',
+        class: 'max-w-none focus:outline-none min-h-[300px] px-8 py-6 knowledge-prose',
       },
     },
     onUpdate: () => {
@@ -110,6 +408,18 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
   })
 
   const forceRerender = useState(0)[1]
+
+  // Monitor editor container width
+  useEffect(() => {
+    fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:editor_mount",message:"NoteEditor mounted - width check",data:{containerWidth: document.getElementById("editor-scroll-container")?.offsetWidth, windowWidth: window.innerWidth, parentWidth: document.getElementById("editor-scroll-container")?.parentElement?.offsetWidth},timestamp:Date.now(),hypothesisId:"B",runId:"debug-run"})}).catch(()=>{});
+
+    const handleResize = () => {
+      fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:window_resize",message:"Window resized - width check",data:{containerWidth: document.getElementById("editor-scroll-container")?.offsetWidth, windowWidth: window.innerWidth},timestamp:Date.now(),hypothesisId:"B",runId:"debug-run"})}).catch(()=>{});
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => window.removeEventListener('resize', handleResize)
+  }, [])
 
   useEffect(() => {
     if (!editor) return
@@ -267,8 +577,12 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
         <ToolbarButton onClick={() => editor?.chain().focus().toggleBlockquote().run()} active={editor?.isActive('blockquote')} title="Blockquote">
           <Quote className="size-3.5" />
         </ToolbarButton>
-        <ToolbarButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive('codeBlock')} title="Code block">
-          <CodeSquare className="size-3.5" />
+        <ToolbarButton 
+          onClick={() => editor?.chain().focus().setCodeBlock().run()} 
+          active={editor?.isActive('codeBlock')} 
+          title="Code block"
+        >
+          <Code className="size-3.5" />
         </ToolbarButton>
 
         <ToolbarSeparator />
@@ -306,9 +620,9 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
         </div>
       </div>
 
-      <div className="flex-1 overflow-auto">
-        <div className="max-w-[760px] mx-auto">
-          <div className="px-8 pt-8 pb-2">
+      <div className="flex-1 overflow-auto" id="editor-scroll-container">
+        <div className="w-full" id="editor-content-wrapper">
+          <div className="px-8 pt-8 pb-2 w-full">
             <input
               type="text"
               value={titleValue}
@@ -318,7 +632,9 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
               className="w-full bg-transparent text-3xl font-bold text-foreground outline-none placeholder:text-muted-foreground resize-none"
             />
           </div>
-          <EditorContent editor={editor} />
+          <div className="px-8 pb-8 w-full">
+            <EditorContent editor={editor} />
+          </div>
         </div>
       </div>
 
