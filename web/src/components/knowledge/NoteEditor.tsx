@@ -26,6 +26,7 @@ declare module '@tiptap/core' {
 import { useEffect, useRef, useCallback, useState, type ChangeEvent } from 'react'
 import { useNote, useUpload } from '@/hooks/useKnowledge'
 import { useKnowledgeStore } from '@/stores/knowledge.store'
+import { appToast } from '@/lib/toast'
 import {
   Bold,
   Italic,
@@ -462,6 +463,7 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
       setDirty(false)
     } catch {
       setSaveStatus('unsaved')
+      appToast.error('Failed to save note')
     }
   }, [editor, noteId, updateBlock, createBlock, setDirty])
 
@@ -501,9 +503,19 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
 
   const handleTitleBlur = () => {
     if (!noteId || !titleValue.trim()) return
-    updateNote.mutate({ id: noteId, data: { title: titleValue.trim() } })
-    setSaveStatus('saved')
-    setDirty(false)
+    updateNote.mutate(
+      { id: noteId, data: { title: titleValue.trim() } },
+      {
+        onSuccess: () => {
+          setSaveStatus('saved')
+          setDirty(false)
+        },
+        onError: () => {
+          appToast.error('Failed to update title')
+          setDirty(true)
+        },
+      }
+    )
   }
 
   const handleImageUpload = async (e: ChangeEvent<HTMLInputElement>) => {
@@ -512,7 +524,10 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
     try {
       const result = await upload(file)
       editor.chain().focus().setImage({ src: result.url }).run()
-    } catch {}
+      appToast.success('Image uploaded')
+    } catch {
+      appToast.error('Failed to upload image')
+    }
     if (imageInputRef.current) imageInputRef.current.value = ''
   }
 

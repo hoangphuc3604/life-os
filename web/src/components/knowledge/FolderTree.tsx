@@ -5,6 +5,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useKnowledgeStore } from '@/stores/knowledge.store'
 import { type Folder, type Note } from '@/lib/api/knowledge.api'
 import { cn } from '@/lib/utils'
+import { appToast } from '@/lib/toast'
 import {
   ChevronRight,
   ChevronDown,
@@ -25,6 +26,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu'
 import { Button } from '@/components/ui/button'
+import { DeleteConfirmDialog } from './DeleteConfirmDialog'
 
 function SkeletonItem({ indent = 0 }: { indent?: number }) {
   return (
@@ -45,6 +47,7 @@ function NoteItem({ note, indent }: NoteItemProps) {
   const queryClient = useQueryClient()
   const [isEditing, setIsEditing] = useState(false)
   const [editName, setEditName] = useState(note.title || 'Untitled')
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
 
   const isSelected = selectedNoteId === note.id
@@ -54,7 +57,6 @@ function NoteItem({ note, indent }: NoteItemProps) {
     if (trimmed && trimmed !== note.title) {
       const oldTitle = note.title
 
-      // Update folders cache (used by FolderTree for rendering note titles)
       queryClient.setQueryData<(Folder & { notes?: { title: string }[] })[]>(['folders'], (old) => {
         if (!old) return old
         return old.map((folder) => ({
@@ -65,17 +67,17 @@ function NoteItem({ note, indent }: NoteItemProps) {
         }))
       })
 
-      // Update note detail cache (used by NoteEditor)
       queryClient.setQueryData(['note', note.id], (old: any) =>
         old ? { ...old, title: trimmed } : old,
       )
 
       knowledgeApi.notes.update(note.id, { title: trimmed }).then(() => {
+        appToast.success('Note renamed')
         queryClient.invalidateQueries({ queryKey: ['notes'] })
         queryClient.invalidateQueries({ queryKey: ['folders'] })
         queryClient.invalidateQueries({ queryKey: ['note', note.id] })
       }).catch(() => {
-        // Revert on failure
+        appToast.error('Failed to rename note')
         queryClient.setQueryData<(Folder & { notes?: { title: string }[] })[]>(['folders'], (old) => {
           if (!old) return old
           return old.map((folder) => ({
@@ -95,14 +97,16 @@ function NoteItem({ note, indent }: NoteItemProps) {
     setIsEditing(false)
   }, [editName, note.id, note.title, queryClient])
 
-  const handleDelete = () => {
-    if (confirm(`Delete "${note.title || 'Untitled'}"?`)) {
-      knowledgeApi.notes.delete(note.id).then(() => {
-        queryClient.invalidateQueries({ queryKey: ['notes'] })
-        queryClient.invalidateQueries({ queryKey: ['folders'] })
-        queryClient.invalidateQueries({ queryKey: ['note', note.id] })
-      })
-    }
+  const confirmDelete = () => {
+    knowledgeApi.notes.delete(note.id).then(() => {
+      appToast.success('Note deleted')
+      queryClient.invalidateQueries({ queryKey: ['notes'] })
+      queryClient.invalidateQueries({ queryKey: ['folders'] })
+      queryClient.invalidateQueries({ queryKey: ['note', note.id] })
+    }).catch(() => {
+      appToast.error('Failed to delete note')
+    })
+    setDeleteDialogOpen(false)
   }
 
   return (
@@ -110,7 +114,7 @@ function NoteItem({ note, indent }: NoteItemProps) {
       style={{ paddingLeft: `${indent}px`, paddingRight: '4px' }}
       onClick={() => setSelectedNote(note.id)}
     >
-      <FileText className="size-4 shrink-0 opacity-60" />
+      {/* <FileText className="size-4 shrink-0 opacity-60" /> */}
 
       {isEditing ? (
         <input
@@ -170,14 +174,21 @@ function NoteItem({ note, indent }: NoteItemProps) {
             className="text-red-500 focus:text-red-500"
             onClick={(e) => {
               e.stopPropagation()
-              handleDelete()
+              setDeleteDialogOpen(true)
             }}
           >
-            <Trash2 className="size-4 mr-2" />
+            <Trash2 className="size-4 mr-2" style={{ color: '#ef4444' }} />
             Delete
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete note?"
+        description={`Are you sure you want to delete "${note.title || 'Untitled'}"? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+      />
     </div>
   )
 }
@@ -197,6 +208,7 @@ function FolderItem({ folder, level }: FolderItemProps) {
   } = useKnowledgeStore()
   const { updateFolder, deleteFolder, createFolder } = useFolders()
   const { createNote } = useNotes(folder.id)
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
 
   const isExpanded = expandedFolders.has(folder.id)
   const isSelected = selectedFolderId === folder.id
@@ -210,29 +222,49 @@ function FolderItem({ folder, level }: FolderItemProps) {
   const commitRename = useCallback(() => {
     const trimmed = editName.trim()
     if (trimmed && trimmed !== folder.name) {
-      updateFolder.mutate({ id: folder.id, data: { name: trimmed } })
+      updateFolder.mutate(
+        { id: folder.id, data: { name: trimmed } },
+        {
+          onSuccess: () => appToast.success('Folder renamed'),
+          onError: () => appToast.error('Failed to rename folder'),
+        }
+      )
     } else {
       setEditName(folder.name)
     }
     setIsEditing(false)
   }, [editName, folder.id, folder.name, updateFolder])
 
-  const handleDelete = () => {
-    if (confirm(`Delete "${folder.name}" and all its contents?`)) {
-      deleteFolder.mutate(folder.id)
-    }
+  const confirmDelete = () => {
+    deleteFolder.mutate(folder.id, {
+      onSuccess: () => appToast.success('Folder deleted'),
+      onError: () => appToast.error('Failed to delete folder'),
+    })
+    setDeleteDialogOpen(false)
   }
 
   const handleAddNote = () => {
     createNote.mutate(
       { title: 'Untitled', folderId: folder.id },
-      { onSuccess: (note: Note) => setSelectedNote(note.id) },
+      {
+        onSuccess: (note: Note) => {
+          appToast.success('Note created')
+          setSelectedNote(note.id)
+        },
+        onError: () => appToast.error('Failed to create note'),
+      }
     )
     if (!isExpanded) toggleFolderExpanded(folder.id)
   }
 
   const handleAddFolder = () => {
-    createFolder.mutate({ name: 'Untitled', parentId: folder.id })
+    createFolder.mutate(
+      { name: 'Untitled', parentId: folder.id },
+      {
+        onSuccess: () => appToast.success('Folder created'),
+        onError: () => appToast.error('Failed to create folder'),
+      }
+    )
     if (!isExpanded) toggleFolderExpanded(folder.id)
   }
 
@@ -324,19 +356,29 @@ function FolderItem({ folder, level }: FolderItemProps) {
             <DropdownMenuSeparator />
             <DropdownMenuItem
               className="text-red-500 focus:text-red-500"
-              onClick={handleDelete}
+              onClick={(e) => {
+                e.stopPropagation()
+                setDeleteDialogOpen(true)
+              }}
             >
-              <Trash2 className="size-4 mr-2" />
+              <Trash2 className="size-4 mr-2" style={{ color: '#ef4444' }} />
               Delete
             </DropdownMenuItem>
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
-
+      <DeleteConfirmDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        title="Delete folder?"
+        description={`Are you sure you want to delete "${folder.name}" and all its contents? This action cannot be undone.`}
+        onConfirm={confirmDelete}
+        isPending={deleteFolder.isPending}
+      />
       {isExpanded && (
         <div>
           {folder.notes?.map((note) => (
-            <NoteItem key={note.id} note={note} indent={indent + 20} />
+            <NoteItem key={note.id} note={note} indent={indent + 28} />
           ))}
           {folder.children.map((child) => (
             <FolderItem key={child.id} folder={child} level={level + 1} />
@@ -383,10 +425,13 @@ export const FolderTree = () => {
   const handleCreateFolder = () => {
     const name = newFolderName.trim()
     if (name) {
-      createFolder.mutate({
-        name,
-        parentId: selectedFolderId ?? undefined,
-      })
+      createFolder.mutate(
+        { name, parentId: undefined },
+        {
+          onSuccess: () => appToast.success('Folder created'),
+          onError: () => appToast.error('Failed to create folder'),
+        }
+      )
     }
     setNewFolderName('')
     setIsCreating(false)

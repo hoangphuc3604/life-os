@@ -2,6 +2,7 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
 import { authApi, type LoginPayload, type RegisterPayload } from '@/lib/api/auth.api'
 import { useAuthStore } from '@/stores/auth.store'
+import { appToast } from '@/lib/toast'
 
 export const authKeys = {
   profile: ['auth', 'profile'] as const,
@@ -20,7 +21,11 @@ export function useLoginMutation() {
       const profile = await authApi.getProfile()
       setUser(profile)
       queryClient.setQueryData(authKeys.profile, profile)
+      appToast.success('Welcome back!')
       navigate('/', { replace: true })
+    },
+    onError: () => {
+      appToast.error('Invalid username or password')
     },
   })
 }
@@ -39,7 +44,11 @@ export function useRegisterMutation() {
       const profile = await authApi.getProfile()
       setUser(profile)
       queryClient.setQueryData(authKeys.profile, profile)
+      appToast.success('Account created successfully!')
       navigate('/', { replace: true })
+    },
+    onError: () => {
+      appToast.error('Registration failed. Please try again.')
     },
   })
 }
@@ -75,6 +84,12 @@ export function useLogoutMutation() {
     onSuccess: () => {
       logout()
       queryClient.removeQueries({ queryKey: authKeys.profile })
+      appToast.success('Logged out successfully')
+      navigate('/login', { replace: true })
+    },
+    onError: () => {
+      appToast.error('Logout failed')
+      logout()
       navigate('/login', { replace: true })
     },
   })
