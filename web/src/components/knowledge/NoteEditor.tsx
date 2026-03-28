@@ -15,6 +15,7 @@ import {
   Italic,
   Strikethrough,
   Code,
+  CodeSquare,
   List,
   ListOrdered,
   CheckSquare,
@@ -73,7 +74,7 @@ function ToolbarButton({
 
 export const NoteEditor = ({ noteId }: NoteEditorProps) => {
   const { note, isLoading, updateNote, createBlock, updateBlock } = useNote(noteId)
-  const { setDirty, isDirty } = useKnowledgeStore()
+  const { setDirty } = useKnowledgeStore()
   const { upload, isUploading } = useUpload()
 
   const [saveStatus, setSaveStatus] = useState<SaveStatus>('idle')
@@ -98,7 +99,7 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
     editorProps: {
       attributes: {
         class:
-          'prose prose-sm dark:prose-invert max-w-none focus:outline-none min-h-[300px] px-8 py-6 knowledge-prose',
+          'max-w-none focus:outline-none min-h-[300px] px-8 py-6 knowledge-prose',
       },
     },
     onUpdate: () => {
@@ -107,6 +108,19 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
       scheduleAutoSave()
     },
   })
+
+  const forceRerender = useState(0)[1]
+
+  useEffect(() => {
+    if (!editor) return
+    const rerender = () => forceRerender((n) => n + 1)
+    editor.on('selectionUpdate', rerender)
+    editor.on('transaction', rerender)
+    return () => {
+      editor.off('selectionUpdate', rerender)
+      editor.off('transaction', rerender)
+    }
+  }, [editor])
 
   const scheduleAutoSave = useCallback(() => {
     if (autoSaveTimer.current) clearTimeout(autoSaveTimer.current)
@@ -254,7 +268,7 @@ export const NoteEditor = ({ noteId }: NoteEditorProps) => {
           <Quote className="size-3.5" />
         </ToolbarButton>
         <ToolbarButton onClick={() => editor?.chain().focus().toggleCodeBlock().run()} active={editor?.isActive('codeBlock')} title="Code block">
-          <Code className="size-3.5" />
+          <CodeSquare className="size-3.5" />
         </ToolbarButton>
 
         <ToolbarSeparator />

@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "tw-animate-css";
 @import "@fontsource-variable/geist";
+@import "prosemirror-view/style/prosemirror.css";
 
 :root {
   --background: oklch(1 0 0);
@@ -158,6 +159,8 @@
   color: var(--foreground);
   font-size: 15px;
   line-height: 1.7;
+  white-space: pre-wrap;
+  word-wrap: break-word;
 }
 .knowledge-prose h1,
 .knowledge-prose h2,
@@ -173,10 +176,47 @@
 .knowledge-prose p { margin: 0.5em 0; }
 .knowledge-prose ul,
 .knowledge-prose ol {
-  padding-left: 1.5em;
-  margin: 0.5em 0;
+  list-style: disc !important;
+  padding-left: 1.5em !important;
+  margin: 0.5em 0 !important;
 }
-.knowledge-prose li { margin: 0.2em 0; }
+.knowledge-prose ol {
+  list-style-type: decimal !important;
+}
+.knowledge-prose li {
+  margin: 0.2em 0 !important;
+}
+.knowledge-prose ul > li {
+  list-style-type: disc !important;
+}
+.knowledge-prose ul > li::marker {
+  color: var(--foreground) !important;
+}
+.knowledge-prose ul > li::before {
+  color: var(--foreground) !important;
+}
+.knowledge-prose ol > li {
+  list-style-type: decimal !important;
+}
+.knowledge-prose ol > li::marker {
+  color: var(--foreground) !important;
+}
+.knowledge-prose ul ul,
+.knowledge-prose ul ol,
+.knowledge-prose ol ul,
+.knowledge-prose ol ol {
+  list-style-type: circle !important;
+}
+.knowledge-prose ul ul > li::marker,
+.knowledge-prose ul ol > li::marker,
+.knowledge-prose ol ul > li::marker {
+  color: var(--foreground) !important;
+}
+.knowledge-prose ul ul > li::before,
+.knowledge-prose ul ol > li::before,
+.knowledge-prose ol ul > li::before {
+  color: var(--foreground) !important;
+}
 .knowledge-prose blockquote {
   border-left: 3px solid var(--primary);
   padding-left: 1em;
@@ -210,14 +250,35 @@
 }
 .knowledge-prose strong { color: var(--foreground); font-weight: 600; }
 .knowledge-prose ul[data-type="taskList"] { list-style: none; padding-left: 0; }
-.knowledge-prose ul[data-type="taskList"] li {
+.knowledge-prose ul[data-type="taskList"] > li {
   display: flex;
   align-items: flex-start;
   gap: 0.5em;
+  margin: 0.2em 0;
 }
-.knowledge-prose ul[data-type="taskList"] li > label {
+.knowledge-prose ul[data-type="taskList"] > li > label {
   flex-shrink: 0;
-  margin-top: 2px;
+  display: flex;
+  align-items: center;
+  margin-top: 3px;
+  cursor: pointer;
+}
+.knowledge-prose ul[data-type="taskList"] > li > label > input[type="checkbox"] {
+  width: 15px;
+  height: 15px;
+  accent-color: var(--primary);
+  cursor: pointer;
+  margin: 0;
+}
+.knowledge-prose ul[data-type="taskList"] > li > div {
+  display: flex;
+  align-items: flex-start;
+  flex: 1;
+  min-width: 0;
+}
+.knowledge-prose ul[data-type="taskList"] > li[data-checked="true"] > div {
+  text-decoration: line-through;
+  color: var(--muted-foreground);
 }
 .knowledge-prose .is-editor-empty:first-child::before {
   color: var(--muted-foreground);
