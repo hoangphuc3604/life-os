@@ -244,6 +244,7 @@ function FolderItem({ folder, level }: FolderItemProps) {
   }
 
   const handleAddNote = () => {
+    if (!isExpanded) toggleFolderExpanded(folder.id)
     createNote.mutate(
       { title: 'Untitled', folderId: folder.id },
       {
@@ -254,10 +255,10 @@ function FolderItem({ folder, level }: FolderItemProps) {
         onError: () => appToast.error('Failed to create note'),
       }
     )
-    if (!isExpanded) toggleFolderExpanded(folder.id)
   }
 
   const handleAddFolder = () => {
+    if (!isExpanded) toggleFolderExpanded(folder.id)
     createFolder.mutate(
       { name: 'Untitled', parentId: folder.id },
       {
@@ -265,7 +266,6 @@ function FolderItem({ folder, level }: FolderItemProps) {
         onError: () => appToast.error('Failed to create folder'),
       }
     )
-    if (!isExpanded) toggleFolderExpanded(folder.id)
   }
 
   return (
@@ -336,11 +336,11 @@ function FolderItem({ folder, level }: FolderItemProps) {
             </Button>
           </DropdownMenuTrigger>
           <DropdownMenuContent align="start" className="w-44">
-            <DropdownMenuItem onClick={handleAddNote}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAddNote(); }}>
               <FilePlus className="size-4 mr-2" />
               New note
             </DropdownMenuItem>
-            <DropdownMenuItem onClick={handleAddFolder}>
+            <DropdownMenuItem onClick={(e) => { e.stopPropagation(); handleAddFolder(); }}>
               <FolderPlus className="size-4 mr-2" />
               New folder
             </DropdownMenuItem>
@@ -418,7 +418,6 @@ function AllNotesSection() {
 
 export const FolderTree = () => {
   const { folders, isLoading, createFolder } = useFolders()
-  const { selectedFolderId } = useKnowledgeStore()
   const [isCreating, setIsCreating] = useState(false)
   const [newFolderName, setNewFolderName] = useState('')
 

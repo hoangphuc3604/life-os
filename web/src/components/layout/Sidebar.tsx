@@ -30,15 +30,17 @@ export function Sidebar() {
   return (
     <SidebarUI>
       <SidebarHeader className="h-16 border-b flex flex-row items-center px-4 gap-3">
-        <div className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-border/60">
+        <NavLink to="/" replace className="flex size-10 shrink-0 items-center justify-center overflow-hidden rounded-lg ring-1 ring-border/60 cursor-pointer">
           <img
             src="/logo-removebg-preview.png"
             alt="LIFEOS"
             className="h-full w-full object-cover object-center"
           />
-        </div>
+        </NavLink>
         {!isCollapsed && (
-          <span className="font-bold text-lg text-foreground truncate">LIFEOS</span>
+          <NavLink to="/" replace className="font-bold text-lg text-foreground truncate cursor-pointer hover:opacity-80 transition-opacity">
+            LIFEOS
+          </NavLink>
         )}
         <SidebarTrigger className="ml-auto" />
       </SidebarHeader>
