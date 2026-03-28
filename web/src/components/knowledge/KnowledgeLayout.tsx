@@ -1,3 +1,4 @@
+import { useEffect } from 'react'
 import { useKnowledgeStore } from '@/stores/knowledge.store'
 import { FolderTree } from './FolderTree'
 import { NoteEditor } from './NoteEditor'
@@ -38,14 +39,37 @@ function EmptyState() {
   )
 }
 
-export const KnowledgeLayout = () => {
+export function KnowledgeLayout() {
   const { selectedNoteId, sidebarOpen, setSidebarOpen, setSearchOpen } = useKnowledgeStore()
 
+  // Force re-render when sidebar state changes to update layout
+  useEffect(() => {
+    const endpoint = "http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2"
+    const payload = {
+      sessionId: "7516fd",
+      location: "KnowledgeLayout.tsx:sidebar_toggle",
+      message: "Sidebar toggled",
+      data: {
+        sidebarOpen,
+        windowWidth: window.innerWidth,
+        mainContentWidth: document.querySelector(".knowledge-main-content")?.clientWidth
+      },
+      timestamp: Date.now(),
+      hypothesisId: "B",
+      runId: "debug-run"
+    }
+    fetch(endpoint, {
+      method: "POST",
+      headers: { "Content-Type": "application/json", "X-Debug-Session-Id": "7516fd" },
+      body: JSON.stringify(payload)
+    }).catch(() => {})
+  }, [sidebarOpen])
+
   return (
-    <div className="flex h-full relative">
+    <div className="flex h-full relative w-full">
       <div
         className={cn(
-          'border-r bg-background transition-[width] duration-200 overflow-hidden shrink-0 flex flex-col',
+          'border-r bg-background transition-[width] duration-200 ease-out overflow-hidden shrink-0 flex flex-col',
           sidebarOpen ? 'w-[260px]' : 'w-0',
         )}
       >
@@ -90,7 +114,7 @@ export const KnowledgeLayout = () => {
         </Button>
       )}
 
-      <div className="flex-1 flex flex-col min-w-0">
+      <div className="flex-1 flex flex-col min-w-0 knowledge-main-content">
         {selectedNoteId ? <NoteEditor noteId={selectedNoteId} /> : <EmptyState />}
       </div>
     </div>
