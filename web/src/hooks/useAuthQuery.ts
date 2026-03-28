@@ -60,12 +60,7 @@ export function useProfileQuery() {
   return useQuery({
     queryKey: authKeys.profile,
     queryFn: async () => {
-      try {
-        return await authApi.getProfile()
-      } catch {
-        logout()
-        throw new Error('Unauthorized')
-      }
+      return await authApi.getProfile()
     },
     enabled: !!accessToken,
     staleTime: 5 * 60 * 1000,
