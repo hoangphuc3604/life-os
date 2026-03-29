@@ -1,4 +1,4 @@
-name: CI/CD Pipeline
+name: CI/CD Pipeline - Cloud Run
 
 on:
   push:
@@ -6,7 +6,9 @@ on:
       - main
 
 env:
-  REGISTRY: ghcr.io
+  GCP_PROJECT_ID: ${{ secrets.GCP_PROJECT_ID }}
+  REGION: asia-southeast1
+  REGISTRY: asia-southeast1-docker.pkg.dev/${{ secrets.GCP_PROJECT_ID }}/lifeos-registry
   NODE_VERSION: '22'
 
 jobs:
@@ -49,7 +51,7 @@ jobs:
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
     permissions:
       contents: read
-      packages: write
+      id-token: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
@@ -59,15 +61,19 @@ jobs:
         env:
           OWNER: ${{ github.repository_owner }}
 
+      - name: Set up Google Cloud credentials
+        uses: google-github-actions/auth@v2
+        with:
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
+
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Configure Docker for Artifact Registry
+        run: gcloud auth configure-docker ${{ env.REGISTRY }}
+
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GH_PACKAGE_TOKEN }}
 
       - name: Build and push Auth Service
         uses: docker/build-push-action@v5
@@ -112,148 +118,81 @@ jobs:
     needs: build-and-push
     runs-on: ubuntu-latest
     if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    environment: production
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set lower case owner name
-        run: echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
-        env:
-          OWNER: ${{ github.repository_owner }}
-
-      - name: Copy production files to VM
-        uses: appleboy/scp-action@v0.1.7
+      - name: Set up Google Cloud credentials
+        uses: google-github-actions/auth@v2
         with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          source: "docker-compose.prod.yml,docker/postgres-init.sql,services/"
-          target: "~/lifeos"
-          strip_components: 1
+          credentials_json: ${{ secrets.GCP_SA_KEY }}
 
-      - name: Create auth-service .env file on VM
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Set up Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+
+      - name: Deploy Auth Service to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            cd ~/lifeos
-
-            mkdir -p services/auth-service
-
-            cat > services/auth-service/.env << 'EOF'
-            POSTGRES_HOST=postgres
-            POSTGRES_PORT=5432
-            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_DB=lifeos_auth
-            DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/lifeos_auth
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_EXPIRATION=15m
+          service: auth-service
+          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-auth:${{ github.sha }}
+          region: ${{ env.REGION }}
+          platform: managed
+          allow-unauthenticated: false
+          set-env-vars: |
+            NODE_ENV=cloudrun,
+            DATABASE_URL=${{ secrets.AUTH_DATABASE_URL }},
+            JWT_SECRET=${{ secrets.JWT_SECRET }},
             PORT=3000
-            NODE_ENV=production
-            EOF
 
-      - name: Create knowledge-service .env file on VM
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy Knowledge Service to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            cd ~/lifeos
-
-            mkdir -p services/knowledge-service
-
-            cat > services/knowledge-service/.env << 'EOF'
-            POSTGRES_HOST=postgres
-            POSTGRES_PORT=5432
-            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            POSTGRES_DB=lifeos_knowledge
-            DATABASE_URL=postgresql://${{ secrets.POSTGRES_USER }}:${{ secrets.POSTGRES_PASSWORD }}@postgres:5432/lifeos_knowledge
-            JWT_SECRET=${{ secrets.JWT_SECRET }}
-            JWT_EXPIRATION=15m
-            PORT=3002
-            NODE_ENV=production
-            UPLOAD_DIR=./uploads
+          service: knowledge-service
+          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-knowledge:${{ github.sha }}
+          region: ${{ env.REGION }}
+          platform: managed
+          allow-unauthenticated: false
+          set-env-vars: |
+            NODE_ENV=cloudrun,
+            DATABASE_URL=${{ secrets.KNOWLEDGE_DATABASE_URL }},
+            JWT_SECRET=${{ secrets.JWT_SECRET }},
+            PORT=3002,
+            UPLOAD_DIR=/usr/src/app/uploads,
             MAX_FILE_SIZE=10485760
-            EOF
 
-      - name: Create .env for docker-compose
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy API Gateway to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            cd ~/lifeos
+          service: api-gateway
+          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-gateway:${{ github.sha }}
+          region: ${{ env.REGION }}
+          platform: managed
+          allow-unauthenticated: true
+          set-env-vars: |
+            AUTH_SERVICE_URL=https://auth-service-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app,
+            KNOWLEDGE_SERVICE_URL=https://knowledge-service-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app,
+            ALLOWED_ORIGINS=https://${{ secrets.DOMAIN_NAME }}
 
-            cat > .env << 'EOF'
-            POSTGRES_USER=${{ secrets.POSTGRES_USER }}
-            POSTGRES_PASSWORD=${{ secrets.POSTGRES_PASSWORD }}
-            API_GATEWAY_PORT=8080
-            GITHUB_REPOSITORY_OWNER=${{ env.OWNER_LC }}
-            EOF
-
-      - name: Login to Container Registry on VM
-        uses: appleboy/ssh-action@v1.0.3
+      - name: Deploy Frontend Web to Cloud Run
+        uses: google-github-actions/deploy-cloudrun@v2
         with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            echo "${{ secrets.GH_PACKAGE_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
+          service: web
+          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-web:${{ github.sha }}
+          region: ${{ env.REGION }}
+          platform: managed
+          allow-unauthenticated: true
+          args: nginx -g daemon off;
+          memory: 256Mi
+          cpu: 1
 
-      - name: Pull latest images
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            cd ~/lifeos
-            docker compose -f docker-compose.prod.yml pull
-
-      - name: Stop and remove old containers
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            cd ~/lifeos
-            docker compose -f docker-compose.prod.yml down --remove-orphans
-
-      - name: Start services
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            cd ~/lifeos
-            docker compose -f docker-compose.prod.yml up -d
-            sleep 10
-
-      - name: Check services health
-        uses: appleboy/ssh-action@v1.0.3
-        with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            cd ~/lifeos
-            echo "Checking service health..."
-            docker compose -f docker-compose.prod.yml ps
-
-      - name: Cleanup Docker resources
-        uses: appleboy/ssh-action@v1.0.3
-        if: always()
-        with:
-          host: ${{ secrets.GCP_VM_HOST }}
-          username: ${{ secrets.GCP_VM_USER }}
-          key: ${{ secrets.GCP_VM_SSH_KEY }}
-          script: |
-            docker system prune -af --filter "until=24h"
+      - name: Verify Production Deployment
+        run: |
+          echo "Production deployment complete!"
+          echo "Auth Service: https://auth-service.${{ env.REGION }}.run.app"
+          echo "Knowledge Service: https://knowledge-service.${{ env.REGION }}.run.app"
+          echo "API Gateway: https://api-gateway.${{ env.REGION }}.run.app"
+          echo "Web: https://web.${{ env.REGION }}.run.app"

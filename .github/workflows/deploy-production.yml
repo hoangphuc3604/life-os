@@ -43,9 +43,9 @@ jobs:
           allow-unauthenticated: false
           set-env-vars: |
             NODE_ENV=cloudrun,
-            DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }},
+            DATABASE_URL=${{ secrets.AUTH_DATABASE_URL_PRODUCTION }},
             JWT_SECRET=${{ secrets.JWT_SECRET }},
-            CLOUD_SQL_INSTANCE=${{ secrets.PRODUCTION_CLOUD_SQL_INSTANCE }}
+            CLOUD_SQL_INSTANCE=${{ secrets.AUTH_CLOUD_SQL_INSTANCE_PRODUCTION }}
 
       # Deploy Knowledge Service
       - name: Deploy Knowledge Service to Cloud Run (Production)
@@ -58,9 +58,9 @@ jobs:
           allow-unauthenticated: false
           set-env-vars: |
             NODE_ENV=cloudrun,
-            DATABASE_URL=${{ secrets.PRODUCTION_DATABASE_URL }},
+            DATABASE_URL=${{ secrets.KNOWLEDGE_DATABASE_URL_PRODUCTION }},
             JWT_SECRET=${{ secrets.JWT_SECRET }},
-            CLOUD_SQL_INSTANCE=${{ secrets.PRODUCTION_CLOUD_SQL_INSTANCE }},
+            CLOUD_SQL_INSTANCE=${{ secrets.KNOWLEDGE_CLOUD_SQL_INSTANCE_PRODUCTION }},
             UPLOAD_DIR=/usr/src/app/uploads,
             MAX_FILE_SIZE=10485760
 
