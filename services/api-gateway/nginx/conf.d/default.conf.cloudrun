@@ -1,0 +1,79 @@
+# Dynamic configuration using environment variables for Cloud Run
+# Set via --set-env-vars: AUTH_SERVICE_URL=https://xxx,KNOWLEDGE_SERVICE_URL=https://yyy
+
+set $auth_service "${AUTH_SERVICE_URL}";
+set $knowledge_service "${KNOWLEDGE_SERVICE_URL}";
+set $allowed_origins "${ALLOWED_ORIGINS:-*}";
+
+server {
+    listen 8080;
+    server_name localhost;
+
+    location /health {
+        return 200 'OK';
+        add_header Content-Type text/plain;
+    }
+
+    location /api/auth/ {
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' $allowed_origins always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+            add_header 'Access-Control-Max-Age' 86400;
+            return 204;
+        }
+        proxy_pass $auth_service/auth/;
+        include /etc/nginx/snippets/proxy_params.conf;
+        add_header 'Access-Control-Allow-Origin' $allowed_origins always;
+    }
+
+    location = /auth/validate {
+        internal;
+        proxy_pass $auth_service/auth/validate;
+        proxy_pass_request_body off;
+        proxy_set_header Content-Length "";
+        proxy_set_header Authorization $http_authorization;
+    }
+
+    location /api/knowledge/ {
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' $allowed_origins always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+            add_header 'Access-Control-Max-Age' 86400;
+            return 204;
+        }
+        auth_request /auth/validate;
+        auth_request_set $user_id $upstream_http_x_user_id;
+        auth_request_set $user_email $upstream_http_x_user_email;
+        proxy_set_header Authorization "";
+        proxy_set_header X-User-Id $user_id;
+        proxy_set_header X-User-Email $user_email;
+        proxy_pass $knowledge_service/;
+        include /etc/nginx/snippets/proxy_params.conf;
+        add_header 'Access-Control-Allow-Origin' $allowed_origins always;
+    }
+
+    location /api/protected/ {
+        if ($request_method = OPTIONS) {
+            add_header 'Access-Control-Allow-Origin' $allowed_origins always;
+            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
+            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
+            add_header 'Access-Control-Max-Age' 86400;
+            return 204;
+        }
+        auth_request /auth/validate;
+        auth_request_set $user_id $upstream_http_x_user_id;
+        auth_request_set $user_email $upstream_http_x_user_email;
+        proxy_set_header Authorization "";
+        proxy_set_header X-User-Id $user_id;
+        proxy_set_header X-User-Email $user_email;
+        proxy_pass $auth_service/auth/public-protected;
+        include /etc/nginx/snippets/proxy_params.conf;
+        add_header 'Access-Control-Allow-Origin' $allowed_origins always;
+    }
+
+    location / {
+        return 404;
+    }
+}
