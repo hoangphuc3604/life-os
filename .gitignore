@@ -48,3 +48,11 @@ coverage/
 # Docker
 .dockerignore
 
+# Credentials / Secrets
+*.pem
+*.key
+key.json
+service-account.json
+secrets/
+credentials/
+

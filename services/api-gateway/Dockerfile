@@ -1,15 +1,28 @@
-FROM nginx:alpine
+# ========================================
+# Multi-stage Dockerfile for API Gateway
+# Supports: development, production, cloudrun
+# ========================================
 
-ARG NODE_ENV=dev
-ENV NODE_ENV=$NODE_ENV
-
+FROM nginx:alpine AS development
 RUN rm /etc/nginx/conf.d/default.conf
-
 COPY nginx/snippets /etc/nginx/snippets/
-COPY nginx/conf.d/nginx.conf.${NODE_ENV} /etc/nginx/conf.d/default.conf
-
+COPY nginx/conf.d/nginx.conf.dev /etc/nginx/conf.d/default.conf
 RUN echo 'OK' > /usr/share/nginx/html/health.html
-
 EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
 
+FROM nginx:alpine AS production
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx/snippets /etc/nginx/snippets/
+COPY nginx/conf.d/nginx.conf.prod /etc/nginx/conf.d/default.conf
+RUN echo 'OK' > /usr/share/nginx/html/health.html
+EXPOSE 80
+CMD ["nginx", "-g", "daemon off;"]
+
+FROM nginx:alpine AS cloudrun
+RUN rm /etc/nginx/conf.d/default.conf
+COPY nginx/snippets /etc/nginx/snippets/
+COPY nginx/conf.d/default.conf.cloudrun /etc/nginx/conf.d/default.conf
+RUN echo 'OK' > /usr/share/nginx/html/health.html
+EXPOSE 8080
 CMD ["nginx", "-g", "daemon off;"]

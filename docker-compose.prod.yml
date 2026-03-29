@@ -1,85 +1,54 @@
-version: '3.8'
+# ========================================
+# Production Docker Compose Override
+# Usage: docker compose -f docker-compose.yml -f docker-compose.prod.yml up --build
+# ========================================
 
 services:
   postgres:
-    image: postgres:15-alpine
-    container_name: lifeos_postgres
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    ports:
-      - "5432:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d lifeos_auth"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-      start_period: 10s
-    restart: unless-stopped
-    networks:
-      - lifeos-network
+    # Uses postgres from base docker-compose.yml
+    # Add production-specific overrides here if needed
 
   auth-service:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/lifeos-auth:latest
-    container_name: lifeos_auth_service
-    env_file:
-      - ./services/auth-service/.env
-    environment:
-      - NODE_ENV=production
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - lifeos-network
+    build:
+      context: ./services/auth-service
+      target: production
+    # Override volumes - no volume mounts for production
+    volumes: []
+    # Override command - production mode
+    command: ["node", "dist/main"]
 
   knowledge-service:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/lifeos-knowledge:latest
-    container_name: lifeos_knowledge_service
-    env_file:
-      - ./services/knowledge-service/.env
-    environment:
-      - NODE_ENV=production
-    volumes:
-      - knowledge_uploads:/usr/src/app/uploads
-    depends_on:
-      postgres:
-        condition: service_healthy
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "wget", "--spider", "-q", "http://localhost:3002/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 40s
-    networks:
-      - lifeos-network
+    build:
+      context: ./services/knowledge-service
+      target: production
+    # Override volumes - no volume mounts for production
+    volumes: []
+    # Override command - production mode
+    command: ["node", "dist/main"]
 
   api-gateway:
-    image: ghcr.io/${GITHUB_REPOSITORY_OWNER}/lifeos-gateway:latest
-    container_name: lifeos_api_gateway
+    build:
+      context: ./services/api-gateway
+      target: production
+    # Production port mapping
     ports:
       - "${API_GATEWAY_PORT:-8080}:80"
+
+  # Frontend Web Service
+  web:
+    build:
+      context: ./web
+      target: production
+      args:
+        - VITE_API_GATEWAY_URL=${VITE_API_GATEWAY_URL:-http://localhost:8080}
+    container_name: lifeos_web
+    ports:
+      - "${WEB_PORT:-3000}:8080"
     depends_on:
-      - auth-service
-      - knowledge-service
-    restart: unless-stopped
+      - api-gateway
     networks:
       - lifeos-network
 
 networks:
   lifeos-network:
-    driver: bridge
-
-volumes:
-  postgres_data:
-  knowledge_uploads:
+    external: true
