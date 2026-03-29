@@ -1,4 +1,7 @@
-FROM node:22-alpine AS development
+FROM node:22-alpine
+
+ARG NODE_ENV=dev
+ENV NODE_ENV=$NODE_ENV
 
 WORKDIR /usr/src/app
 
@@ -6,33 +9,28 @@ RUN apk add --no-cache openssl
 
 COPY package*.json ./
 
-RUN npm install
+RUN if [ "$NODE_ENV" = "prod" ]; then \
+      npm ci --only=production; \
+    else \
+      npm install; \
+    fi
 
 COPY . .
 
-RUN npx prisma generate
+RUN npx prisma generate && \
+    if [ "$NODE_ENV" = "prod" ]; then \
+      npm run build; \
+    fi
 
-RUN npm run build
+RUN addgroup -g 1001 -S nodejs && \
+    adduser -S nodejs -u 1001 && \
+    chown -R nodejs:nodejs /usr/src/app && \
+    rm -rf /usr/src/app/dist
 
-FROM node:22-alpine AS production
+USER nodejs
 
-ARG NODE_ENV=production
-ENV NODE_ENV=${NODE_ENV}
+EXPOSE 3000
 
-WORKDIR /usr/src/app
+ENV PORT=3000
 
-RUN apk add --no-cache openssl
-
-COPY package*.json ./
-
-RUN npm install --only=production
-
-COPY prisma ./prisma/
-RUN npx prisma generate
-
-COPY --from=development /usr/src/app/dist ./dist
-
-COPY docker-entrypoint.sh ./
-RUN chmod +x docker-entrypoint.sh
-
-CMD ["./docker-entrypoint.sh", "node", "dist/main"]
+CMD ["npm", "run", "start:dev"]
