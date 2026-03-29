@@ -6,15 +6,14 @@ export PORT
 
 echo "Starting Cloud SQL Auth Proxy with Unix socket..."
 mkdir -p /cloudsql
-/chmod +x /cloud-sql-proxy
 /cloud-sql-proxy --unix-socket /cloudsql ${CLOUD_SQL_INSTANCE} &
 PROXY_PID=$!
 
 echo "Waiting for Cloud SQL Auth Proxy to be ready..."
-sleep 3
+sleep 5
 
-echo "Checking database connection..."
-echo "DATABASE_URL: postgresql://\$AUTH_DB_USER:***@/lifeos_auth?host=/cloudsql/\$GCP_PROJECT_ID:\$REGION:lifeos-auth-db"
+echo "Running database migrations..."
+npx prisma migrate deploy || echo "Migrations may already be applied"
 
 echo "Starting application on PORT=$PORT..."
 exec "$@" 2>&1 | tee /dev/stderr

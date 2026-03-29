@@ -47,7 +47,7 @@ WORKDIR /usr/src/app
 COPY --from=gcr.io/cloud-sql-connectors/cloud-sql-proxy:alpine /cloud-sql-proxy /cloud-sql-proxy
 RUN apk add --no-cache openssl
 COPY package*.json ./
-RUN npm ci --only=production
+RUN npm ci
 COPY --from=builder /usr/src/app/node_modules ./node_modules
 COPY --from=builder /usr/src/app/dist ./dist
 COPY --from=builder /usr/src/app/prisma ./prisma
