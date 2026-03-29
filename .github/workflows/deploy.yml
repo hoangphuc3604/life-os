@@ -59,11 +59,6 @@ jobs:
       - name: Checkout repo
         uses: actions/checkout@v4
 
-      - name: Set lower case owner name
-        run: echo "OWNER_LC=${OWNER,,}" >> $GITHUB_ENV
-        env:
-          OWNER: ${{ github.repository_owner }}
-
       - name: Set up Google Cloud credentials
         uses: google-github-actions/auth@v2
         with:
@@ -86,8 +81,8 @@ jobs:
           target: production
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-auth:latest
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-auth:${{ github.sha }}
+            ${{ env.REGISTRY }}/lifeos-auth:latest
+            ${{ env.REGISTRY }}/lifeos-auth:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -99,8 +94,8 @@ jobs:
           target: production
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-knowledge:latest
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-knowledge:${{ github.sha }}
+            ${{ env.REGISTRY }}/lifeos-knowledge:latest
+            ${{ env.REGISTRY }}/lifeos-knowledge:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -112,8 +107,8 @@ jobs:
           target: production
           push: true
           tags: |
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-gateway:latest
-            ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-gateway:${{ github.sha }}
+            ${{ env.REGISTRY }}/lifeos-gateway:latest
+            ${{ env.REGISTRY }}/lifeos-gateway:${{ github.sha }}
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
@@ -140,10 +135,11 @@ jobs:
       - name: Deploy Auth Service to Cloud Run
         run: |
           gcloud run deploy auth-service \
-            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-auth:${{ github.sha }} \
+            --image ${{ env.REGISTRY }}/lifeos-auth:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --platform managed \
             --no-allow-unauthenticated \
+            --add-cloudsql-instances ${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:lifeos-auth-db \
             --set-env-vars "NODE_ENV=cloudrun" \
             --set-env-vars "DATABASE_URL=${{ secrets.AUTH_DATABASE_URL }}" \
             --set-env-vars "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
@@ -158,10 +154,11 @@ jobs:
       - name: Deploy Knowledge Service to Cloud Run
         run: |
           gcloud run deploy knowledge-service \
-            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-knowledge:${{ github.sha }} \
+            --image ${{ env.REGISTRY }}/lifeos-knowledge:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --platform managed \
             --no-allow-unauthenticated \
+            --add-cloudsql-instances ${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:lifeos-knowledge-db \
             --set-env-vars "NODE_ENV=cloudrun" \
             --set-env-vars "DATABASE_URL=${{ secrets.KNOWLEDGE_DATABASE_URL }}" \
             --set-env-vars "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
@@ -178,7 +175,7 @@ jobs:
       - name: Deploy API Gateway to Cloud Run
         run: |
           gcloud run deploy api-gateway \
-            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-gateway:${{ github.sha }} \
+            --image ${{ env.REGISTRY }}/lifeos-gateway:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
@@ -196,7 +193,7 @@ jobs:
       - name: Deploy Frontend Web to Cloud Run
         run: |
           gcloud run deploy web \
-            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-web:${{ github.sha }} \
+            --image ${{ env.REGISTRY }}/lifeos-web:${{ github.sha }} \
             --region ${{ env.REGION }} \
             --platform managed \
             --allow-unauthenticated \
