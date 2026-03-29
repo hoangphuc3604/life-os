@@ -138,64 +138,83 @@ jobs:
         uses: google-github-actions/setup-gcloud@v2
 
       - name: Deploy Auth Service to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: auth-service
-          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-auth:${{ github.sha }}
-          region: ${{ env.REGION }}
-          platform: managed
-          allow-unauthenticated: false
-          set-env-vars: |
-            NODE_ENV=cloudrun,
-            DATABASE_URL=${{ secrets.AUTH_DATABASE_URL }},
-            JWT_SECRET=${{ secrets.JWT_SECRET }},
-            PORT=3000
+        run: |
+          gcloud run deploy auth-service \
+            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-auth:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --no-allow-unauthenticated \
+            --set-env-vars "NODE_ENV=cloudrun" \
+            --set-env-vars "DATABASE_URL=${{ secrets.AUTH_DATABASE_URL }}" \
+            --set-env-vars "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+            --set-env-vars "PORT=3000" \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --concurrency 80 \
+            --timeout 300s \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy Knowledge Service to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: knowledge-service
-          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-knowledge:${{ github.sha }}
-          region: ${{ env.REGION }}
-          platform: managed
-          allow-unauthenticated: false
-          set-env-vars: |
-            NODE_ENV=cloudrun,
-            DATABASE_URL=${{ secrets.KNOWLEDGE_DATABASE_URL }},
-            JWT_SECRET=${{ secrets.JWT_SECRET }},
-            PORT=3002,
-            UPLOAD_DIR=/usr/src/app/uploads,
-            MAX_FILE_SIZE=10485760
+        run: |
+          gcloud run deploy knowledge-service \
+            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-knowledge:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --no-allow-unauthenticated \
+            --set-env-vars "NODE_ENV=cloudrun" \
+            --set-env-vars "DATABASE_URL=${{ secrets.KNOWLEDGE_DATABASE_URL }}" \
+            --set-env-vars "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
+            --set-env-vars "PORT=3002" \
+            --set-env-vars "UPLOAD_DIR=/usr/src/app/uploads" \
+            --set-env-vars "MAX_FILE_SIZE=10485760" \
+            --memory 512Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --concurrency 80 \
+            --timeout 300s \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy API Gateway to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: api-gateway
-          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-gateway:${{ github.sha }}
-          region: ${{ env.REGION }}
-          platform: managed
-          allow-unauthenticated: true
-          set-env-vars: |
-            AUTH_SERVICE_URL=https://auth-service-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app,
-            KNOWLEDGE_SERVICE_URL=https://knowledge-service-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app,
-            ALLOWED_ORIGINS=https://${{ secrets.DOMAIN_NAME }}
+        run: |
+          gcloud run deploy api-gateway \
+            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-gateway:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 80 \
+            --set-env-vars "AUTH_SERVICE_URL=https://auth-service-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app" \
+            --set-env-vars "KNOWLEDGE_SERVICE_URL=https://knowledge-service-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app" \
+            --set-env-vars "ALLOWED_ORIGINS=https://${{ secrets.DOMAIN_NAME }}" \
+            --memory 256Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --concurrency 100 \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Deploy Frontend Web to Cloud Run
-        uses: google-github-actions/deploy-cloudrun@v2
-        with:
-          service: web
-          image: ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-web:${{ github.sha }}
-          region: ${{ env.REGION }}
-          platform: managed
-          allow-unauthenticated: true
-          args: nginx -g daemon off;
-          memory: 256Mi
-          cpu: 1
+        run: |
+          gcloud run deploy web \
+            --image ${{ env.REGISTRY }}/${{ env.OWNER_LC }}/lifeos-web:${{ github.sha }} \
+            --region ${{ env.REGION }} \
+            --platform managed \
+            --allow-unauthenticated \
+            --port 8080 \
+            --memory 256Mi \
+            --cpu 1 \
+            --min-instances 0 \
+            --max-instances 10 \
+            --concurrency 1000 \
+            --args "nginx,-g,daemon off;" \
+            --project ${{ secrets.GCP_PROJECT_ID }}
 
       - name: Verify Production Deployment
         run: |
           echo "Production deployment complete!"
-          echo "Auth Service: https://auth-service.${{ env.REGION }}.run.app"
-          echo "Knowledge Service: https://knowledge-service.${{ env.REGION }}.run.app"
-          echo "API Gateway: https://api-gateway.${{ env.REGION }}.run.app"
-          echo "Web: https://web.${{ env.REGION }}.run.app"
+          echo "Auth Service: https://auth-service-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app"
+          echo "Knowledge Service: https://knowledge-service-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app"
+          echo "API Gateway: https://api-gateway-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app"
+          echo "Web: https://web-${{ secrets.GCP_PROJECT_NUMBER }}.${{ env.REGION }}.run.app"
