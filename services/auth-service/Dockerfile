@@ -58,6 +58,5 @@ RUN addgroup -g 1001 -S nodejs && \
     adduser -S nodejs -u 1001 && \
     chown -R nodejs:nodejs /usr/src/app
 USER nodejs
-EXPOSE 3000
-ENV PORT=3000
+EXPOSE 8080
 CMD ["/cloud-run-entrypoint.sh"]
