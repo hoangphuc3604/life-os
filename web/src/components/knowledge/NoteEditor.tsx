@@ -168,24 +168,7 @@ const CODE_LANGUAGES = [
 function CodeBlockNodeView({ node, updateAttributes }: NodeViewProps) {
   const language = node.attrs.language ?? 'plaintext'
   const [isOpen, setIsOpen] = useState(false)
-  const [isHovered, setIsHovered] = useState(false)
   const selectedLang = CODE_LANGUAGES.find(l => l.value === language) ?? CODE_LANGUAGES[0]
-
-  useEffect(() => {
-    fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:mount",message:"Mount",data:{language},timestamp:Date.now(),hypothesisId:"A",runId:"debug-run"})}).catch(()=>{});
-  }, [])
-
-  const handleMouseEnter = () => {
-    setIsHovered(true)
-    fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:enter",message:"Enter",data:{language, isHovered: true},timestamp:Date.now(),hypothesisId:"A",runId:"debug-run"})}).catch(()=>{});
-  }
-
-  const handleMouseLeave = () => {
-    setIsHovered(false)
-    fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:leave",message:"Leave",data:{language, isHovered: false},timestamp:Date.now(),hypothesisId:"A",runId:"debug-run"})}).catch(()=>{});
-  }
-
-  fetch("http://127.0.0.1:7726/ingest/918adc1f-9727-420b-8c52-f776b158e8a2",{method:"POST",headers:{"Content-Type":"application/json","X-Debug-Session-Id":"7516fd"},body:JSON.stringify({sessionId:"7516fd",location:"NoteEditor.tsx:render",message:"Render",data:{language, isHovered, isOpen},timestamp:Date.now(),hypothesisId:"A",runId:"debug-run"})}).catch(()=>{});
 
   return (
     <NodeViewWrapper>

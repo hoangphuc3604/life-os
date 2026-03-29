@@ -55,7 +55,6 @@ export function useRegisterMutation() {
 
 export function useProfileQuery() {
   const accessToken = useAuthStore((s) => s.accessToken)
-  const logout = useAuthStore((s) => s.logout)
 
   return useQuery({
     queryKey: authKeys.profile,
