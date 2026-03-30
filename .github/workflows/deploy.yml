@@ -141,12 +141,11 @@ jobs:
             --no-allow-unauthenticated \
             --add-cloudsql-instances ${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:lifeos-auth-db \
             --set-env-vars "NODE_ENV=cloudrun" \
-            --set-env-vars "DATABASE_URL=postgresql://\$AUTH_DB_USER:\$AUTH_DB_PASSWORD@/lifeos_auth?host=/cloudsql/\$GCP_PROJECT_ID:\$REGION:lifeos-auth-db" \
+            --set-env-vars "DATABASE_URL=postgresql://\$AUTH_DB_USER:\$AUTH_DB_PASSWORD@localhost:5432/lifeos_auth" \
             --set-env-vars "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
             --set-env-vars "CLOUD_SQL_INSTANCE=${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:lifeos-auth-db" \
             --set-env-vars "AUTH_DB_USER=${{ secrets.AUTH_DB_USER }}" \
             --set-env-vars "AUTH_DB_PASSWORD=${{ secrets.AUTH_DB_PASSWORD }}" \
-            --set-env-vars "GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}" \
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
@@ -164,14 +163,13 @@ jobs:
             --no-allow-unauthenticated \
             --add-cloudsql-instances ${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:lifeos-knowledge-db \
             --set-env-vars "NODE_ENV=cloudrun" \
-            --set-env-vars "DATABASE_URL=postgresql://\$KNOWLEDGE_DB_USER:\$KNOWLEDGE_DB_PASSWORD@/lifeos_knowledge?host=/cloudsql/\$GCP_PROJECT_ID:\$REGION:lifeos-knowledge-db" \
+            --set-env-vars "DATABASE_URL=postgresql://\$KNOWLEDGE_DB_USER:\$KNOWLEDGE_DB_PASSWORD@localhost:5432/lifeos_knowledge" \
             --set-env-vars "JWT_SECRET=${{ secrets.JWT_SECRET }}" \
             --set-env-vars "UPLOAD_DIR=/usr/src/app/uploads" \
             --set-env-vars "MAX_FILE_SIZE=10485760" \
             --set-env-vars "CLOUD_SQL_INSTANCE=${{ secrets.GCP_PROJECT_ID }}:${{ env.REGION }}:lifeos-knowledge-db" \
             --set-env-vars "KNOWLEDGE_DB_USER=${{ secrets.KNOWLEDGE_DB_USER }}" \
             --set-env-vars "KNOWLEDGE_DB_PASSWORD=${{ secrets.KNOWLEDGE_DB_PASSWORD }}" \
-            --set-env-vars "GCP_PROJECT_ID=${{ secrets.GCP_PROJECT_ID }}" \
             --memory 512Mi \
             --cpu 1 \
             --min-instances 0 \
