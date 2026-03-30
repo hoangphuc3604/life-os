@@ -8,7 +8,7 @@ echo "=== Starting Cloud SQL Auth Proxy ==="
 echo "CLOUD_SQL_INSTANCE=${CLOUD_SQL_INSTANCE}"
 echo "======================================"
 
-/cloud-sql-proxy ${CLOUD_SQL_INSTANCE} &
+/cloud-sql-proxy --private-ip ${CLOUD_SQL_INSTANCE} &
 PROXY_PID=$!
 
 echo "Waiting for Cloud SQL Auth Proxy to be ready..."
