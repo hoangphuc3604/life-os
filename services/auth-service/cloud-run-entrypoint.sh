@@ -1,12 +1,9 @@
 #!/bin/sh
 set -e
 
-echo "Starting Cloud SQL Auth Proxy..."
-/cloud-sql-proxy --port 5432 ${CLOUD_SQL_INSTANCE} &
-PROXY_PID=$!
+PORT=${PORT:-8080}
+export PORT
 
-echo "Waiting for Cloud SQL Auth Proxy to be ready..."
-sleep 3
+npx prisma migrate deploy || true
 
-echo "Starting application..."
-exec "$@"
+exec node dist/main.js
