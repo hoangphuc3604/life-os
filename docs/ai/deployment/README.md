@@ -9,64 +9,96 @@ description: Define deployment process, infrastructure, and release procedures
 ## Infrastructure
 **Where will the application run?**
 
-- Hosting platform (AWS, GCP, Azure, etc.)
-- Infrastructure components (servers, databases, etc.)
-- Environment separation (dev, staging, production)
+- Google Cloud Platform (GCP)
+- Google Cloud Run (Serverless container platform)
+- Google Cloud SQL (PostgreSQL 15)
+- Google Artifact Registry (Docker images)
 
 ## Deployment Pipeline
 **How do we deploy changes?**
 
-### Build Process
-- Build steps and commands
-- Asset compilation/optimization
-- Environment configuration
+### CI Pipeline (GitHub Actions)
+- **Workflow:** `.github/workflows/ci.yml`
+- **Trigger:** Push/PR to any branch
+- **Purpose:** Run tests only, no deployment
+- **No auto-deploy** - Deployment is manual via deploy script
 
-### CI/CD Pipeline
-- Automated testing gates
-- Build automation
-- Deployment automation
+### Manual Deployment (Script)
+- **Script:** `scripts/deploy-cloudrun.sh`
+- **Usage:** `./deploy-cloudrun.sh`
+- **Options:**
+  - `--skip-build` - Use existing Docker images
+  - `--skip-health` - Skip health checks
+  - `--rollback` - Rollback to previous version
 
 ## Environment Configuration
-**What settings differ per environment?**
 
 ### Development
-- Configuration details
-- Local setup
+- Local Docker Compose
+- PostgreSQL in Docker
+- Hot reload enabled
 
-### Staging
-- Configuration details
-- Testing environment
-
-### Production
-- Configuration details
-- Monitoring setup
+### Production (Cloud Run)
+- Fully containerized microservices
+- Cloud SQL for database (managed PostgreSQL)
+- VPC for secure connectivity
+- No auto-scaling (configurable min/max instances)
 
 ## Deployment Steps
-**What's the release process?**
 
-1. Pre-deployment checklist
-2. Deployment execution steps
-3. Post-deployment validation
-4. Rollback procedure (if needed)
+1. **Push code to GitHub**
+   - CI workflow runs tests automatically
+   - Tests must pass before manual deployment
+
+2. **Run deploy script**
+   ```bash
+   cd scripts
+   ./deploy-cloudrun.sh
+   ```
+
+3. **Verify deployment**
+   - Script performs health checks
+   - Returns service URLs
 
 ## Database Migrations
-**How do we handle schema changes?**
 
-- Migration strategy
-- Backup procedures
-- Rollback approach
+### Local Development
+```bash
+cd services/auth-service
+npx prisma migrate deploy
+```
+
+### Cloud Run
+Migrations must be run before or after deployment:
+```bash
+# Connect to Cloud SQL and run migrations manually
+gcloud sql connect lifeos-auth-db --user=lifeos_auth_user
+```
 
 ## Secrets Management
-**How do we handle sensitive data?**
 
-- Environment variables
-- Secret storage solution
-- Key rotation strategy
+### Configuration File
+- `scripts/config.env` - Deployment configuration (gitignored)
+- `scripts/config.env.example` - Template for configuration
+
+### Required Secrets
+- JWT_SECRET - JWT signing key
+- Database credentials - Stored in config.env
 
 ## Rollback Plan
-**What if something goes wrong?**
 
-- Rollback triggers
-- Rollback steps
-- Communication plan
+### Using Deploy Script
+```bash
+./deploy-cloudrun.sh --rollback
+```
 
+### Manual Rollback
+```bash
+# Get previous revision
+gcloud run revisions list --service=auth-service --region=asia-southeast1
+
+# Rollback to previous revision
+gcloud run services update-traffic auth-service \
+  --to-revisions=PREVIOUS_REVISION=100 \
+  --region=asia-southeast1
+```
