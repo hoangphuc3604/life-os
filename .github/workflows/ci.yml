@@ -1,0 +1,44 @@
+name: CI Pipeline
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+env:
+  NODE_VERSION: '22'
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: 'npm'
+          cache-dependency-path: services/**/package-lock.json
+
+      - name: Install and test Auth Service
+        working-directory: ./services/auth-service
+        run: |
+          npm ci
+          npx prisma generate
+          npm run test
+
+      - name: Install and test Knowledge Service
+        working-directory: ./services/knowledge-service
+        run: |
+          npm ci
+          npx prisma generate
+          npm run test
+
+      - name: Install and test API Gateway
+        working-directory: ./services/api-gateway
+        run: |
+          npm ci
+          npm run test

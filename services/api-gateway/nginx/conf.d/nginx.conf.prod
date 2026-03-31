@@ -2,23 +2,23 @@ server {
     listen 80;
     server_name localhost;
 
+    set $allowed_origins "*";
+
     location /health {
         return 200 'OK';
         add_header Content-Type text/plain;
     }
 
     location /api/auth/ {
-        proxy_pass https://auth-service-hoangphuc3604.asia-southeast1.run.app/auth/;
+        include /etc/nginx/snippets/cors_preflight.conf;
+        proxy_pass http://auth-service:3000/auth/;
         include /etc/nginx/snippets/proxy_params.conf;
         include /etc/nginx/snippets/cors.conf;
-        if ($request_method = OPTIONS) {
-            return 204;
-        }
     }
 
     location = /auth/validate {
         internal;
-        proxy_pass https://auth-service-hoangphuc3604.asia-southeast1.run.app/auth/validate;
+        proxy_pass http://auth-service:3000/auth/validate;
         proxy_pass_request_body off;
         proxy_set_header Content-Length "";
         proxy_set_header X-Original-URI $request_uri;
@@ -26,43 +26,17 @@ server {
     }
 
     location /api/knowledge/ {
-        if ($request_method = OPTIONS) {
-            add_header Access-Control-Allow-Origin "*" always;
-            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
-            add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
-            return 204;
-        }
-
-        auth_request /auth/validate;
-        auth_request_set $user_id $upstream_http_x_user_id;
-        auth_request_set $user_email $upstream_http_x_user_email;
-
-        proxy_set_header Authorization "";
-        proxy_set_header X-User-Id $user_id;
-        proxy_set_header X-User-Email $user_email;
-
-        proxy_pass https://knowledge-service-hoangphuc3604.asia-southeast1.run.app/;
+        include /etc/nginx/snippets/cors_preflight.conf;
+        include /etc/nginx/snippets/auth_request.conf;
+        proxy_pass http://knowledge-service:3002/;
         include /etc/nginx/snippets/proxy_params.conf;
         include /etc/nginx/snippets/cors.conf;
     }
 
     location /api/protected/ {
-        if ($request_method = OPTIONS) {
-            add_header Access-Control-Allow-Origin "*" always;
-            add_header Access-Control-Allow-Methods "GET, POST, PUT, PATCH, DELETE, OPTIONS" always;
-            add_header Access-Control-Allow-Headers "Authorization, Content-Type" always;
-            return 204;
-        }
-
-        auth_request /auth/validate;
-        auth_request_set $user_id $upstream_http_x_user_id;
-        auth_request_set $user_email $upstream_http_x_user_email;
-
-        proxy_set_header Authorization "";
-        proxy_set_header X-User-Id $user_id;
-        proxy_set_header X-User-Email $user_email;
-
-        proxy_pass https://auth-service-hoangphuc3604.asia-southeast1.run.app/auth/public-protected;
+        include /etc/nginx/snippets/cors_preflight.conf;
+        include /etc/nginx/snippets/auth_request.conf;
+        proxy_pass http://auth-service:3000/auth/public-protected;
         include /etc/nginx/snippets/proxy_params.conf;
         include /etc/nginx/snippets/cors.conf;
     }

@@ -1,14 +1,10 @@
-# ========================================
-# Multi-stage Dockerfile for Knowledge Service
-# Supports: development, production, cloudrun
-# ========================================
-
-# Stage 1: Development - Full dependencies with dev tools
-FROM node:22-alpine AS development
+FROM node:22-alpine AS base
 WORKDIR /usr/src/app
 RUN apk add --no-cache openssl
 COPY package*.json ./
-RUN npm install
+RUN npm ci
+
+FROM base AS development
 COPY . .
 RUN npx prisma generate
 RUN mkdir -p uploads
@@ -16,51 +12,29 @@ EXPOSE 3002
 ENV PORT=3002
 CMD ["npm", "run", "start:dev"]
 
-# Stage 2: Builder - Build artifacts
-FROM node:22-alpine AS builder
-WORKDIR /usr/src/app
-RUN apk add --no-cache openssl
-COPY package*.json ./
-RUN npm ci
+FROM base AS build
 COPY . .
 RUN npx prisma generate
 RUN npm run build
 
-# Stage 3: Production runtime (for VM/docker-compose.prod)
 FROM node:22-alpine AS production
 WORKDIR /usr/src/app
 RUN apk add --no-cache openssl
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/prisma ./prisma
-COPY package*.json ./
-COPY prisma/schema.prisma ./prisma/schema.prisma
-RUN mkdir -p uploads
 RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /usr/src/app
+    adduser -S nodejs -u 1001
+COPY --chown=nodejs:nodejs --from=build /usr/src/app/package*.json ./
+COPY --chown=nodejs:nodejs --from=build /usr/src/app/node_modules ./node_modules
+COPY --chown=nodejs:nodejs --from=build /usr/src/app/dist ./dist
+COPY --chown=nodejs:nodejs --from=build /usr/src/app/prisma ./prisma
+RUN mkdir -p uploads && chown nodejs:nodejs uploads
 USER nodejs
 EXPOSE 3002
 ENV PORT=3002
-CMD ["node", "dist/main"]
+CMD ["node", "dist/main.js"]
 
-# Stage 4: Cloud Run runtime (with Cloud SQL Auth Proxy)
-FROM node:22-alpine AS cloudrun
-WORKDIR /usr/src/app
-COPY --from=gcr.io/cloud-sql-connectors/cloud-sql-proxy:alpine /cloud-sql-proxy /cloud-sql-proxy
-RUN apk add --no-cache openssl
-COPY package*.json ./
-RUN npm ci
-COPY --from=builder /usr/src/app/node_modules ./node_modules
-COPY --from=builder /usr/src/app/dist ./dist
-COPY --from=builder /usr/src/app/prisma ./prisma
-COPY prisma/schema.prisma ./prisma/schema.prisma
-COPY cloud-run-entrypoint.sh /cloud-run-entrypoint.sh
-RUN chmod +x /cloud-run-entrypoint.sh
-RUN mkdir -p uploads
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001 && \
-    chown -R nodejs:nodejs /usr/src/app
-USER nodejs
+FROM production AS cloudrun
+COPY --chown=nodejs:nodejs cloud-run-entrypoint.sh ./cloud-run-entrypoint.sh
+RUN chmod +x cloud-run-entrypoint.sh
+ENV PORT=8080
 EXPOSE 8080
-CMD ["/cloud-run-entrypoint.sh"]
+CMD ["./cloud-run-entrypoint.sh"]

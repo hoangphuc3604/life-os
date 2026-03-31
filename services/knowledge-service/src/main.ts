@@ -5,8 +5,11 @@ import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 
 async function bootstrap() {
+  console.log('--- STARTING KNOWLEDGE SERVICE BOOTSTRAP ---');
   try {
+    console.log('Initializing NestFactory...');
     const app = await NestFactory.create(AppModule);
+    console.log('NestFactory initialized.');
     
     app.useGlobalPipes(new ValidationPipe({
       whitelist: true,
@@ -24,7 +27,7 @@ async function bootstrap() {
     const document = SwaggerModule.createDocument(app, swaggerConfig);
     SwaggerModule.setup('api', app, document);
     
-    await app.listen(port);
+    await app.listen(port, '0.0.0.0');
     console.log(`Knowledge Service running on port ${port}`);
   } catch (error) {
     console.error('Failed to start application:', error);

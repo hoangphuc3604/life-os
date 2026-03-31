@@ -12,10 +12,10 @@ services:
       - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
     healthcheck:
       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d postgres"]
-      interval: 5s
+      interval: 10s
       timeout: 5s
       retries: 5
-      start_period: 10s
+      start_period: 15s
     restart: unless-stopped
     networks:
       - lifeos-network
@@ -23,16 +23,19 @@ services:
   auth-service:
     build:
       context: ./services/auth-service
-      target: development
+      target: production
     container_name: lifeos_auth_service
     env_file:
       - ./services/auth-service/.env
-    volumes:
-      - ./services/auth-service:/usr/src/app
-      - /usr/src/app/node_modules
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3000/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
     networks:
       - lifeos-network
@@ -40,17 +43,21 @@ services:
   knowledge-service:
     build:
       context: ./services/knowledge-service
-      target: development
+      target: production
     container_name: lifeos_knowledge_service
     env_file:
       - ./services/knowledge-service/.env
     volumes:
-      - ./services/knowledge-service:/usr/src/app
-      - /usr/src/app/node_modules
       - knowledge_uploads:/usr/src/app/uploads
     depends_on:
       postgres:
         condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:3002/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
     restart: unless-stopped
     networks:
       - lifeos-network
@@ -58,13 +65,42 @@ services:
   api-gateway:
     build:
       context: ./services/api-gateway
-      target: development
+      target: production
     container_name: lifeos_api_gateway
     ports:
       - "${API_GATEWAY_PORT:-8080}:80"
     depends_on:
-      - auth-service
-      - knowledge-service
+      auth-service:
+        condition: service_healthy
+      knowledge-service:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/health || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    restart: unless-stopped
+    networks:
+      - lifeos-network
+
+  web:
+    build:
+      context: ./web
+      target: production
+      args:
+        - VITE_API_GATEWAY_URL=${VITE_API_GATEWAY_URL:-http://localhost:8080}
+    container_name: lifeos_web
+    ports:
+      - "${WEB_PORT:-3001}:80"
+    depends_on:
+      api-gateway:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost:80/ || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
     restart: unless-stopped
     networks:
       - lifeos-network

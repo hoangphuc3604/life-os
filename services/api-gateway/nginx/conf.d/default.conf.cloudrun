@@ -1,13 +1,19 @@
-# Dynamic configuration using environment variables for Cloud Run
-# Set via --set-env-vars: AUTH_SERVICE_URL=https://xxx,KNOWLEDGE_SERVICE_URL=https://yyy
-
-set $auth_service "${AUTH_SERVICE_URL}";
-set $knowledge_service "${KNOWLEDGE_SERVICE_URL}";
-set $allowed_origins "${ALLOWED_ORIGINS:-*}";
-
 server {
     listen 8080;
     server_name localhost;
+
+    set $auth_service "${AUTH_SERVICE_URL}";
+    set $knowledge_service "${KNOWLEDGE_SERVICE_URL}";
+    set $auth_host "${AUTH_SERVICE_HOST}";
+    set $knowledge_host "${KNOWLEDGE_SERVICE_HOST}";
+    set $allowed_origins "*";
+
+    resolver 8.8.8.8 8.8.4.4 valid=300s;
+    resolver_timeout 5s;
+    proxy_ssl_server_name on;
+    proxy_http_version 1.1;
+    proxy_set_header Connection "";
+
 
     location /health {
         return 200 'OK';
@@ -15,62 +21,46 @@ server {
     }
 
     location /api/auth/ {
-        if ($request_method = OPTIONS) {
-            add_header 'Access-Control-Allow-Origin' $allowed_origins always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
-            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
-            add_header 'Access-Control-Max-Age' 86400;
-            return 204;
-        }
-        proxy_pass $auth_service/auth/;
+        include /etc/nginx/snippets/cors_preflight.conf;
+        rewrite ^/api/auth/(.*) /auth/$1 break;
+        proxy_pass $auth_service;
         include /etc/nginx/snippets/proxy_params.conf;
-        add_header 'Access-Control-Allow-Origin' $allowed_origins always;
+        proxy_set_header Host $auth_host;
+        proxy_ssl_name $auth_host;
+        include /etc/nginx/snippets/cors.conf;
     }
 
     location = /auth/validate {
         internal;
-        proxy_pass $auth_service/auth/validate;
+        rewrite ^ /auth/validate break;
+        proxy_pass $auth_service;
         proxy_pass_request_body off;
         proxy_set_header Content-Length "";
+        proxy_set_header Host $auth_host;
+        proxy_ssl_name $auth_host;
         proxy_set_header Authorization $http_authorization;
     }
 
     location /api/knowledge/ {
-        if ($request_method = OPTIONS) {
-            add_header 'Access-Control-Allow-Origin' $allowed_origins always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
-            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
-            add_header 'Access-Control-Max-Age' 86400;
-            return 204;
-        }
-        auth_request /auth/validate;
-        auth_request_set $user_id $upstream_http_x_user_id;
-        auth_request_set $user_email $upstream_http_x_user_email;
-        proxy_set_header Authorization "";
-        proxy_set_header X-User-Id $user_id;
-        proxy_set_header X-User-Email $user_email;
-        proxy_pass $knowledge_service/;
+        include /etc/nginx/snippets/cors_preflight.conf;
+        include /etc/nginx/snippets/auth_request.conf;
+        rewrite ^/api/knowledge/(.*) /$1 break;
+        proxy_pass $knowledge_service;
         include /etc/nginx/snippets/proxy_params.conf;
-        add_header 'Access-Control-Allow-Origin' $allowed_origins always;
+        proxy_set_header Host $knowledge_host;
+        proxy_ssl_name $knowledge_host;
+        include /etc/nginx/snippets/cors.conf;
     }
 
     location /api/protected/ {
-        if ($request_method = OPTIONS) {
-            add_header 'Access-Control-Allow-Origin' $allowed_origins always;
-            add_header 'Access-Control-Allow-Methods' 'GET, POST, PUT, PATCH, DELETE, OPTIONS' always;
-            add_header 'Access-Control-Allow-Headers' 'Authorization, Content-Type' always;
-            add_header 'Access-Control-Max-Age' 86400;
-            return 204;
-        }
-        auth_request /auth/validate;
-        auth_request_set $user_id $upstream_http_x_user_id;
-        auth_request_set $user_email $upstream_http_x_user_email;
-        proxy_set_header Authorization "";
-        proxy_set_header X-User-Id $user_id;
-        proxy_set_header X-User-Email $user_email;
-        proxy_pass $auth_service/auth/public-protected;
+        include /etc/nginx/snippets/cors_preflight.conf;
+        include /etc/nginx/snippets/auth_request.conf;
+        rewrite ^/api/protected/(.*) /auth/public-protected/$1 break;
+        proxy_pass $auth_service;
         include /etc/nginx/snippets/proxy_params.conf;
-        add_header 'Access-Control-Allow-Origin' $allowed_origins always;
+        proxy_set_header Host $auth_host;
+        proxy_ssl_name $auth_host;
+        include /etc/nginx/snippets/cors.conf;
     }
 
     location / {
