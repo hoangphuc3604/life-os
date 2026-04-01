@@ -9,6 +9,7 @@ import { BlocksModule } from './blocks/blocks.module';
 import { SearchModule } from './search/search.module';
 import { UploadModule } from './upload/upload.module';
 import { AuthModule } from './auth/auth.module';
+import { AppController } from './app.controller';
 
 @Module({
   imports: [
@@ -33,5 +34,6 @@ import { AuthModule } from './auth/auth.module';
     SearchModule,
     UploadModule,
   ],
+  controllers: [AppController],
 })
 export class AppModule {}
