@@ -65,7 +65,7 @@ services:
       context: ./web
       target: production
       args:
-        - VITE_API_GATEWAY_URL=${VITE_API_GATEWAY_URL:-http://localhost:8080}
+        - VITE_API_GATEWAY_URL=${VITE_API_GATEWAY_URL:-http://api-gateway:80/api}
     container_name: lifeos_web
     ports:
       - "${WEB_PORT:-3001}:80"
