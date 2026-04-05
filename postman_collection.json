@@ -173,8 +173,114 @@
 					},
 					"response": []
 				},
+{
+			"name": "7. Send OTP",
+			"event": [
 				{
-					"name": "6. Validate Token (Gateway Test)",
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"testuser1@example.com\",\r\n    \"type\": \"register\"\r\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/auth/otp/send",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "auth", "otp", "send"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "8. Verify OTP",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"testuser1@example.com\",\r\n    \"code\": \"123456\",\r\n    \"type\": \"register\"\r\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/auth/otp/verify",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "auth", "otp", "verify"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "9. Send OTP (Password Reset)",
+			"event": [
+				{
+					"listen": "test",
+					"script": {
+						"exec": [
+							"pm.test(\"Status code is 200\", function () {",
+							"    pm.response.to.have.status(200);",
+							"});"
+						],
+						"type": "text/javascript"
+					}
+				}
+			],
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Content-Type",
+						"value": "application/json"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\r\n    \"email\": \"testuser1@example.com\",\r\n    \"type\": \"reset_password\"\r\n}"
+				},
+				"url": {
+					"raw": "{{BASE_URL}}/api/auth/otp/send",
+					"host": ["{{BASE_URL}}"],
+					"path": ["api", "auth", "otp", "send"]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "10. Validate Token (Gateway Test)",
+
 					"request": {
 						"auth": {
 							"type": "bearer",

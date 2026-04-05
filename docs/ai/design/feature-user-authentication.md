@@ -46,6 +46,29 @@ Stores identity information.
 | `created_at` | TIMESTAMP | |
 | `updated_at` | TIMESTAMP | |
 
+### OtpCode Table
+Manages OTP codes for email verification and password reset.
+| Column | Type | Description |
+|---|---|---|
+| `id` | UUID | Primary Key |
+| `email` | VARCHAR(255) | Email address for OTP delivery |
+| `codeHash` | VARCHAR | Bcrypt hash of the 6-digit OTP |
+| `type` | ENUM | `'register'` \| `'reset_password'` |
+| `expiresAt` | TIMESTAMP | OTP expiration time |
+| `createdAt` | TIMESTAMP | Record creation time |
+
+### User Table (Updated)
+| Column | Type | Description |
+|---|---|---|
+| `id` | UUID | Primary Key |
+| `username` | VARCHAR(50) | Unique, Index |
+| `email` | VARCHAR(255) | Unique, Index |
+| `password_hash` | VARCHAR | Bcrypt hash |
+| `isEmailVerified` | BOOLEAN | Default: false |
+| `roles` | TEXT[] | e.g., ['user', 'admin'] |
+| `created_at` | TIMESTAMP | |
+| `updated_at` | TIMESTAMP | |
+
 ### RefreshToken Table
 Manages long-lived sessions and secure logout/revocation.
 | Column | Type | Description |
@@ -63,6 +86,8 @@ Manages long-lived sessions and secure logout/revocation.
 - **Internal Interfaces:** REST over HTTP.
 - **Endpoints:**
     - `POST /auth/register`: Create a new user. Body: `{ username, email, password }`.
+    - `POST /auth/otp/send`: Send OTP to email. Body: `{ email, type? }`. Types: `'register'` | `'reset_password'`.
+    - `POST /auth/otp/verify`: Verify OTP code. Body: `{ email, code, type }`. Marks email as verified on success.
     - `POST /auth/login`: Authenticate user. Body: `{ email, password }`. Returns: `{ accessToken, refreshToken }`.
     - `POST /auth/refresh`: Refresh access token. Body: `{ refreshToken }`. Checks DB for revocation.
     - `POST /auth/logout`: Invalidate refresh token. Body: `{ refreshToken }`. Marks as revoked in DB.
@@ -74,8 +99,13 @@ Manages long-lived sessions and secure logout/revocation.
 - **Auth Service:**
     - `controllers/auth.controller.ts`: Handles request logic.
     - `services/auth.service.ts`: Business logic (hash checks, token signing, DB interactions).
+    - `controllers/otp.controller.ts`: Handles OTP send/verify requests.
+    - `services/otp.service.ts`: Business logic (OTP generation, hashing, email delivery).
+    - `services/email.service.ts`: Email delivery via SMTP/SendGrid/etc.
+    - `common/types/otp.types.ts`: Centralized OTP type definitions (`OtpType`, `OTP_TYPES`, `DEFAULT_OTP_TYPE`).
     - `entities/user.entity.ts`: ORM definition for User.
     - `entities/refresh-token.entity.ts`: ORM definition for RefreshToken.
+    - `entities/otp-code.entity.ts`: ORM definition for OtpCode.
     - `middleware/auth.middleware.ts`: JWT verification.
     - `routes/auth.routes.ts`: Route definitions.
 

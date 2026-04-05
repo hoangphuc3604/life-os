@@ -30,9 +30,11 @@ description: Clarify the problem space, gather requirements, and define success 
 **How will users interact with the solution?**
 
 - **Sign-up:** As a user, I want to create an account with my username, email, and password so I can have my own private space in LifeOS.
+- **Email Verification (OTP):** As a user, I want to verify my email via OTP code so I can confirm my identity before my account is fully activated.
 - **Secure Login:** As a user, I want to log in to receive a secure token (JWT) that allows me to access my data across different modules without re-authenticating.
 - **Identity Propagation:** As a developer, I want the API Gateway to route requests to the Auth Service so that every request to internal services is pre-validated.
 - **Logout:** As a user, I want to log out to invalidate my current session and ensure my account remains secure on shared devices.
+- **Password Reset:** As a user, I want to reset my password via OTP so I can regain access to my account if I forget my password.
 
 ## Success Criteria
 **How will we know when we're done?**

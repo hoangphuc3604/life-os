@@ -4,16 +4,30 @@ import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
+import { OtpService } from '../otp/otp.service';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
+    private readonly otpService: OtpService,
   ) {}
 
   async register(registerUserDto: RegisterUserDto) {
     const { password, ...userData } = registerUserDto;
+
+    const existingUser = await this.prisma.user.findUnique({
+      where: { email: userData.email },
+    });
+
+    if (existingUser) {
+      if (!existingUser.isEmailVerified) {
+        await this.otpService.generateAndSendOtp(userData.email, 'register');
+        return { message: 'Verification email sent. Please check your inbox.' };
+      }
+      throw new ConflictException('User already exists');
+    }
 
     try {
       const user = await this.prisma.user.create({
@@ -24,8 +38,10 @@ export class AuthService {
         },
       });
 
+      await this.otpService.generateAndSendOtp(user.email, 'register');
+
       const { passwordHash, ...result } = user;
-      return result;
+      return { ...result, message: 'Verification email sent. Please check your inbox.' };
     } catch (error: any) {
       if (error.code === 'P2002') {
         throw new ConflictException('User already exists');

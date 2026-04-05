@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { authApi, type LoginPayload, type RegisterPayload } from '@/lib/api/auth.api'
+import { authApi, type LoginPayload, type RegisterPayload, type SendOtpPayload, type VerifyOtpPayload } from '@/lib/api/auth.api'
 import { useAuthStore } from '@/stores/auth.store'
 import { appToast } from '@/lib/toast'
 
@@ -38,9 +38,9 @@ export function useRegisterMutation() {
 
   return useMutation({
     mutationFn: (payload: RegisterPayload) => authApi.register(payload),
-    onSuccess: async (_, variables) => {
-      const data = await authApi.login({ username: variables.username, password: variables.password })
-      setTokens(data.access_token, data.refresh_token)
+    onSuccess: async (data) => {
+      const loginData = await authApi.login({ username: data.username, password: payload.password })
+      setTokens(loginData.access_token, loginData.refresh_token)
       const profile = await authApi.getProfile()
       setUser(profile)
       queryClient.setQueryData(authKeys.profile, profile)
@@ -85,6 +85,30 @@ export function useLogoutMutation() {
       appToast.error('Logout failed')
       logout()
       navigate('/login', { replace: true })
+    },
+  })
+}
+
+export function useSendOtpMutation() {
+  return useMutation({
+    mutationFn: (payload: SendOtpPayload) => authApi.sendOtp(payload),
+    onSuccess: () => {
+      appToast.success('Verification code sent. Please check your inbox.')
+    },
+    onError: () => {
+      appToast.error('Failed to send verification code. Please try again.')
+    },
+  })
+}
+
+export function useVerifyOtpMutation() {
+  return useMutation({
+    mutationFn: (payload: VerifyOtpPayload) => authApi.verifyOtp(payload),
+    onSuccess: () => {
+      appToast.success('Email verified successfully!')
+    },
+    onError: () => {
+      appToast.error('Invalid or expired verification code.')
     },
   })
 }

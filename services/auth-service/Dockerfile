@@ -28,7 +28,7 @@ COPY --chown=nodejs:nodejs --from=build /usr/src/app/prisma ./prisma
 USER nodejs
 EXPOSE 3000
 ENV PORT=3000
-CMD ["node", "dist/main.js"]
+CMD ["npm", "run", "start:prod"]
 
 FROM production AS cloudrun
 COPY --chown=nodejs:nodejs cloud-run-entrypoint.sh ./cloud-run-entrypoint.sh

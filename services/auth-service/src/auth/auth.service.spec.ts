@@ -35,6 +35,7 @@ describe('AuthService', () => {
     passwordHash: 'hashedpassword',
     roles: ['user'],
     username: 'testuser',
+    isEmailVerified: false,
     createdAt: new Date(),
     updatedAt: new Date(),
   };
