@@ -2,7 +2,7 @@
 
 **Entry Point:** `services/auth-service`
 **Capture Date:** 2026-02-12
-**Last Updated:** 2026-04-05
+**Last Updated:** 2026-04-20
 
 ## Overview
 The `auth-service` is a NestJS-based microservice responsible for user authentication and authorization. It handles user registration, login, token management (issuance, rotation, revocation), user profile retrieval, and OTP-based email verification and password reset.
@@ -146,6 +146,15 @@ Centralized type definitions.
     - Decodes token to get `jti`.
     - Marks the corresponding `RefreshToken` record as `revoked = true`.
 
+### 7. Reset Password
+- **Endpoint:** `POST /auth/reset-password`
+- **Payload:** `ResetPasswordDto` ({ email, code, newPassword })
+- **Logic:**
+    - Calls `otpService.verifyOtp(email, code, 'reset_password')` to validate OTP.
+    - Updates `passwordHash` for the user.
+    - Logs audit entry.
+- **Errors:** 400 Bad Request on invalid/expired OTP.
+
 ## Infrastructure
 
 ### Docker Configuration
@@ -180,8 +189,8 @@ Integrated into the main stack:
 - `nodemailer`, `@nestjs-modules/mailer`: Email delivery.
 
 ## Testing
-- **Unit Tests:** Located in `src/auth/*.spec.ts`, use Jest with mocked PrismaClient.
-- **E2E Tests:** Located in `test/*.e2e-spec.ts`, use mocked PrismaService to avoid real database connections.
+- **Unit Tests:** Located in `src/auth/*.spec.ts`, use Jest with mocked PrismaClient. Note: tests for OTP module (`otp.service.spec.ts`, `otp.controller.spec.ts`) are deferred.
+- **E2E Tests:** Located in `test/*.e2e-spec.ts`, use mocked PrismaService to avoid real database connections. Note: OTP flow E2E tests are deferred.
 
 ## OTP Type System
 

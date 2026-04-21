@@ -71,12 +71,17 @@ export function LoginPage() {
             <Button type="submit" className="w-full" disabled={login.isPending}>
               {login.isPending ? 'Signing in…' : 'Sign in'}
             </Button>
-            <p className="text-center text-sm text-muted-foreground">
-              Don&apos;t have an account?{' '}
-              <Link to="/register" className="font-medium text-primary hover:underline">
-                Sign up
+            <div className="flex items-center justify-between w-full text-sm">
+              <Link to="/forgot-password" className="font-medium text-primary hover:underline">
+                Forgot password?
               </Link>
-            </p>
+              <span className="text-muted-foreground">
+                Don&apos;t have an account?{' '}
+                <Link to="/register" className="font-medium text-primary hover:underline">
+                  Sign up
+                </Link>
+              </span>
+            </div>
           </CardFooter>
         </form>
       </Card>

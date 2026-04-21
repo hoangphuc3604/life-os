@@ -1,9 +1,11 @@
 # Testing Plan: User Authentication
 
 ## 1. Context
-- **Feature**: User Authentication (Register, Login, Token Management, OTP)
+- **Feature**: User Authentication (Register, Login, Token Management, OTP, Reset Password)
 - **Target Component**: `@life-os/services/auth-service`
 - **Goal**: Achieve 100% Code Coverage for `AuthService`, `AuthController`, `OtpService`, and `OtpController`.
+
+> **Note [2026-04-20]:** Unit/E2E tests deferred. The testing strategy below serves as the test specification for future implementation.
 
 ## 2. Unit Testing Strategy
 We will use Jest for unit testing with mocked repositories and JWT service.

@@ -1,7 +1,26 @@
-# AI DevKit Rules
+# AI DevKit & Antigravity Rules
 
 ## Project Context
-This project uses ai-devkit for structured AI-assisted development. Phase documentation is located in `docs/ai/`.
+This project is **LifeOS**, a Personal Knowledge & Resource Planning System using a Microservices architecture. It is optimized for Google Antigravity-assisted development.
+
+### Technology Stack
+- **Frontend**: React (Vite), TypeScript, ShadcnUI, TailwindCSS, Zustand, TanStack Query.
+- **Backend (Node)**: Node.js (Express/NestJS) for Auth, Knowledge, and Planner services.
+- **Backend (Python)**: Python (FastAPI) for Finance and Intelligence (AI/OCR/RAG) services.
+- **Databases**: PostgreSQL (Main), MongoDB (Planner), ChromaDB (Vector Search).
+- **Infrastructure**: Docker, Docker Compose, Nginx (API Gateway).
+
+## Antigravity Advanced Tooling
+Use these tools proactively to ensure high-quality delivery:
+- **Browser Subagent**: Use for E2E testing, visual UI verification, and complex web interactions.
+- **Search Web**: Research best practices, library documentation, and new technologies.
+- **Generate Image**: Create high-quality assets or UI mockups; avoid using placeholders.
+- **Read URL Content**: Extract content from external documentation or reference articles.
+
+## Rich Aesthetics & UI Standards
+- **Premium Design**: All UI components must feel premium and state-of-the-Art. Avoid generic colors; use harmonic palettes, modern typography (Inter/Outfit), and smooth gradients.
+- **Micro-Animations**: Implement subtle hover effects and transitions.
+- **Visual Accuracy**: Use the `browser` tool to verify that the implemented UI matches the "Rich Aesthetics" goal.
 
 ## Documentation Structure
 - `docs/ai/requirements/` - Problem understanding and requirements
@@ -13,9 +32,14 @@ This project uses ai-devkit for structured AI-assisted development. Phase docume
 - `docs/ai/monitoring/` - Monitoring and observability setup
 
 ## Code Style & Standards
-- Follow the project's established code style and conventions
-- Write clear, self-documenting code with meaningful variable names
-- Add comments for complex logic or non-obvious decisions
+- **General**: Write clear, self-documenting code with meaningful variable names.
+- **Python**: 
+  - Prohibit inline code comments.
+  - Use PEP 257-compliant docstrings for all functions, classes, and modules.
+- **React/TS**:
+  - Use Functional Components with TypeScript interfaces for props.
+  - Prioritize composable and reusable components using ShadcnUI.
+- **Architecture**: Follow the project's established microservices boundaries and conventions.
 
 ## Development Workflow
 - Review phase documentation in `docs/ai/` before implementing features
@@ -91,11 +115,14 @@ The AI assistant should proactively use knowledge memory throughout all interact
 - Use mermaid diagrams for any architectural or data-flow visuals (update existing diagrams if needed)
 - Record test coverage results and outstanding gaps in `docs/ai/testing/`
 
-## Key Commands
-When working on this project, you can run commands to:
-- Understand project requirements and goals (`review-requirements`)
-- Review architectural decisions (`review-design`)
-- Plan and execute tasks (`execute-plan`)
-- Verify implementation against design (`check-implementation`)
-- Writing tests (`writing-test`)
-- Perform structured code reviews (`code-review`)
+## Key Commands & Workflows
+When working on this project, leverage the following built-in workflows (Slash Commands):
+- `/review-requirements`: Understand project requirements and goals.
+- `/review-design`: Review architectural decisions.
+- `/execute-plan`: Plan and execute tasks interactively.
+- `/check-implementation`: Verify implementation against design.
+- `/writing-test`: Generate unit and integration tests (target 100% coverage).
+- `/code-review`: Perform structured code reviews.
+- `/debug`: Guided debugging for identifying and fixing issues.
+- `/capture-knowledge`: Document entry points and patterns.
+- `/remember`: Store reusable guidance in memory.

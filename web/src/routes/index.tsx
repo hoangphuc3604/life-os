@@ -7,6 +7,7 @@ import { HomePage } from '@/pages/HomePage'
 import { KnowledgePage } from '@/pages/KnowledgePage'
 import { LoginPage } from '@/pages/LoginPage'
 import { RegisterPage } from '@/pages/RegisterPage'
+import { ForgotPasswordPage } from '@/pages/ForgotPasswordPage'
 
 export const router = createBrowserRouter([
   {
@@ -47,6 +48,15 @@ export const router = createBrowserRouter([
         element: (
           <PublicOnlyRoute>
             <RegisterPage />
+          </PublicOnlyRoute>
+        ),
+      },
+      {
+        path: 'forgot-password',
+        handle: { title: 'Reset password' },
+        element: (
+          <PublicOnlyRoute>
+            <ForgotPasswordPage />
           </PublicOnlyRoute>
         ),
       },

@@ -1,6 +1,6 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useNavigate } from 'react-router-dom'
-import { authApi, type LoginPayload, type RegisterPayload, type SendOtpPayload, type VerifyOtpPayload } from '@/lib/api/auth.api'
+import { authApi, type LoginPayload, type SendOtpPayload, type VerifyOtpPayload, type ResetPasswordPayload } from '@/lib/api/auth.api'
 import { useAuthStore } from '@/stores/auth.store'
 import { appToast } from '@/lib/toast'
 
@@ -26,29 +26,6 @@ export function useLoginMutation() {
     },
     onError: () => {
       appToast.error('Invalid username or password')
-    },
-  })
-}
-
-export function useRegisterMutation() {
-  const queryClient = useQueryClient()
-  const navigate = useNavigate()
-  const setTokens = useAuthStore((s) => s.setTokens)
-  const setUser = useAuthStore((s) => s.setUser)
-
-  return useMutation({
-    mutationFn: (payload: RegisterPayload) => authApi.register(payload),
-    onSuccess: async (data) => {
-      const loginData = await authApi.login({ username: data.username, password: payload.password })
-      setTokens(loginData.access_token, loginData.refresh_token)
-      const profile = await authApi.getProfile()
-      setUser(profile)
-      queryClient.setQueryData(authKeys.profile, profile)
-      appToast.success('Account created successfully!')
-      navigate('/', { replace: true })
-    },
-    onError: () => {
-      appToast.error('Registration failed. Please try again.')
     },
   })
 }
@@ -109,6 +86,21 @@ export function useVerifyOtpMutation() {
     },
     onError: () => {
       appToast.error('Invalid or expired verification code.')
+    },
+  })
+}
+
+export function useResetPasswordMutation() {
+  const navigate = useNavigate()
+
+  return useMutation({
+    mutationFn: (payload: ResetPasswordPayload) => authApi.resetPassword(payload),
+    onSuccess: () => {
+      appToast.success('Password reset successfully! Please login with your new password.')
+      navigate('/login', { replace: true })
+    },
+    onError: () => {
+      appToast.error('Failed to reset password. Please try again.')
     },
   })
 }

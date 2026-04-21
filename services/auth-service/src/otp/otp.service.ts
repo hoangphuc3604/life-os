@@ -22,7 +22,7 @@ export class OtpService {
     return crypto.randomInt(100000, 999999).toString();
   }
 
-  async generateAndSendOtp(email: string, type: OtpType = 'register'): Promise<void> {
+  async generateAndSendOtp(email: string, type: OtpType = 'register', userId?: string): Promise<void> {
     const code = this.generateOtp();
     const expiresMinutes = this.configService.get<number>('OTP_EXPIRATION_MINUTES') || 5;
     const expiresAt = new Date(Date.now() + expiresMinutes * 60 * 1000);
@@ -35,10 +35,9 @@ export class OtpService {
         codeHash,
         type,
         expiresAt,
+        userId: userId ?? null,
       },
     });
-
-    this.logger.log(`OTP sent to ${email} for type: ${type}`);
 
     const html = compileOtpEmailTemplate({
       otpCode: code,
@@ -51,6 +50,8 @@ export class OtpService {
       'Mã xác minh LifeOS - Verification Code',
       html,
     );
+
+    this.logger.log(`OTP sent to ${email} for type: ${type}`);
   }
 
   async verifyOtp(email: string, code: string, type: OtpType): Promise<void> {
@@ -60,6 +61,7 @@ export class OtpService {
         type,
         expiresAt: { gt: new Date() },
       },
+      include: { user: true },
       orderBy: { createdAt: 'desc' },
     });
 
@@ -77,8 +79,14 @@ export class OtpService {
     await this.prisma.otpCode.delete({ where: { id: record.id } });
 
     if (type === 'register') {
+      if (!record.user) {
+        this.logger.error(`OTP verification failed: user not found for email ${email}`);
+        throw new BadRequestException(
+          'User not found. Please use POST /auth/register first, then verify OTP.',
+        );
+      }
       await this.prisma.user.update({
-        where: { email },
+        where: { id: record.user.id },
         data: { isEmailVerified: true },
       });
     }

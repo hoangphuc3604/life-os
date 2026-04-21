@@ -5,6 +5,7 @@ import { AuthService } from './auth.service';
 import { RegisterUserDto } from './dto/register-user.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
 import { JwtAuthGuard } from './guards/jwt-auth.guard';
 
 @ApiTags('auth')
@@ -44,6 +45,20 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'User successfully logged out.' })
   async logout(@Body() refreshTokenDto: RefreshTokenDto) {
     return this.authService.logout(refreshTokenDto.refresh_token);
+  }
+
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({ summary: 'Reset password using OTP code' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully.' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired OTP code.' })
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto) {
+    await this.authService.resetPassword(
+      resetPasswordDto.email,
+      resetPasswordDto.code,
+      resetPasswordDto.newPassword,
+    );
+    return { message: 'Password reset successfully. Please login with your new password.' };
   }
 
   @UseGuards(JwtAuthGuard)

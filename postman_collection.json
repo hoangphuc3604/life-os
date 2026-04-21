@@ -7,6 +7,41 @@
 	},
 	"item": [
 		{
+			"name": "API Gateway",
+			"item": [
+				{
+					"name": "Health Check",
+					"event": [
+						{
+							"listen": "test",
+							"script": {
+								"exec": [
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
+									"});",
+									"pm.test(\"Response is OK\", function () {",
+									"    pm.response.to.have.body(\"OK\");",
+									"});"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{BASE_URL}}/health",
+							"host": ["{{BASE_URL}}"],
+							"path": ["health"]
+						}
+					},
+					"response": []
+				}
+			],
+			"description": "API Gateway health check."
+		},
+		{
 			"name": "Auth Service",
 			"item": [
 				{
@@ -138,149 +173,274 @@
 					},
 					"response": []
 				},
+			{
+				"name": "5. Logout",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 201 or 200\", function () {",
+								"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+								"});"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\r\n    \"refresh_token\": \"{{REFRESH_TOKEN}}\"\r\n}"
+					},
+					"url": {
+						"raw": "{{BASE_URL}}/api/auth/logout",
+						"host": ["{{BASE_URL}}"],
+						"path": ["api", "auth", "logout"]
+					}
+				},
+				"response": []
+			},
+			{
+				"name": "6. Forgot Password",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 200\", function () {",
+								"    pm.response.to.have.status(200);",
+								"});"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\r\n    \"email\": \"testuser1@example.com\"\r\n}"
+					},
+					"url": {
+						"raw": "{{BASE_URL}}/api/auth/forgot-password",
+						"host": ["{{BASE_URL}}"],
+						"path": ["api", "auth", "forgot-password"]
+					}
+				},
+				"response": []
+			},
+			{
+				"name": "7. Send OTP",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 200\", function () {",
+								"    pm.response.to.have.status(200);",
+								"});"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\r\n    \"email\": \"testuser1@example.com\",\r\n    \"type\": \"register\"\r\n}"
+					},
+					"url": {
+						"raw": "{{BASE_URL}}/api/auth/otp/send",
+						"host": ["{{BASE_URL}}"],
+						"path": ["api", "auth", "otp", "send"]
+					}
+				},
+				"response": []
+			},
+			{
+				"name": "8. Verify OTP",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 200\", function () {",
+								"    pm.response.to.have.status(200);",
+								"});"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\r\n    \"email\": \"testuser1@example.com\",\r\n    \"code\": \"123456\",\r\n    \"type\": \"register\"\r\n}"
+					},
+					"url": {
+						"raw": "{{BASE_URL}}/api/auth/otp/verify",
+						"host": ["{{BASE_URL}}"],
+						"path": ["api", "auth", "otp", "verify"]
+					}
+				},
+				"response": []
+			},
+			{
+				"name": "9. Send OTP (Password Reset)",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 200\", function () {",
+								"    pm.response.to.have.status(200);",
+								"});"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"method": "POST",
+					"header": [
+						{
+							"key": "Content-Type",
+							"value": "application/json"
+						}
+					],
+					"body": {
+						"mode": "raw",
+						"raw": "{\r\n    \"email\": \"testuser1@example.com\",\r\n    \"type\": \"reset_password\"\r\n}"
+					},
+					"url": {
+						"raw": "{{BASE_URL}}/api/auth/otp/send",
+						"host": ["{{BASE_URL}}"],
+						"path": ["api", "auth", "otp", "send"]
+					}
+				},
+				"response": []
+			},
+			{
+				"name": "10. Validate Token (Gateway Test)",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 200\", function () {",
+								"    pm.response.to.have.status(200);",
+								"});"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{ACCESS_TOKEN}}",
+								"type": "string"
+							}
+						]
+					},
+					"method": "GET",
+					"header": [],
+					"url": {
+						"raw": "{{BASE_URL}}/api/auth/validate",
+						"host": ["{{BASE_URL}}"],
+						"path": ["api", "auth", "validate"]
+					}
+				},
+				"response": []
+			},
+			{
+				"name": "11. Public Protected (Gateway Test)",
+				"event": [
+					{
+						"listen": "test",
+						"script": {
+							"exec": [
+								"pm.test(\"Status code is 200\", function () {",
+								"    pm.response.to.have.status(200);",
+								"});"
+							],
+							"type": "text/javascript"
+						}
+					}
+				],
+				"request": {
+					"auth": {
+						"type": "bearer",
+						"bearer": [
+							{
+								"key": "token",
+								"value": "{{ACCESS_TOKEN}}",
+								"type": "string"
+							}
+						]
+					},
+					"method": "GET",
+					"header": [],
+					"url": {
+						"raw": "{{BASE_URL}}/api/protected/test",
+						"host": ["{{BASE_URL}}"],
+						"path": ["api", "protected", "test"]
+					}
+				},
+				"response": []
+			}
+		],
+		"description": "APIs xác thực người dùng."
+	},
+		{
+			"name": "Knowledge Service - Health",
+			"item": [
 				{
-					"name": "5. Logout",
+					"name": "Health Check",
 					"event": [
 						{
 							"listen": "test",
 							"script": {
 								"exec": [
-									"pm.test(\"Status code is 201 or 200\", function () {",
-									"    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
+									"pm.test(\"Status code is 200\", function () {",
+									"    pm.response.to.have.status(200);",
 									"});"
 								],
 								"type": "text/javascript"
 							}
 						}
 					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\r\n    \"refresh_token\": \"{{REFRESH_TOKEN}}\"\r\n}"
-						},
-						"url": {
-							"raw": "{{BASE_URL}}/api/auth/logout",
-							"host": ["{{BASE_URL}}"],
-							"path": ["api", "auth", "logout"]
-						}
-					},
-					"response": []
-				},
-{
-			"name": "7. Send OTP",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"testuser1@example.com\",\r\n    \"type\": \"register\"\r\n}"
-				},
-				"url": {
-					"raw": "{{BASE_URL}}/api/auth/otp/send",
-					"host": ["{{BASE_URL}}"],
-					"path": ["api", "auth", "otp", "send"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "8. Verify OTP",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"testuser1@example.com\",\r\n    \"code\": \"123456\",\r\n    \"type\": \"register\"\r\n}"
-				},
-				"url": {
-					"raw": "{{BASE_URL}}/api/auth/otp/verify",
-					"host": ["{{BASE_URL}}"],
-					"path": ["api", "auth", "otp", "verify"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "9. Send OTP (Password Reset)",
-			"event": [
-				{
-					"listen": "test",
-					"script": {
-						"exec": [
-							"pm.test(\"Status code is 200\", function () {",
-							"    pm.response.to.have.status(200);",
-							"});"
-						],
-						"type": "text/javascript"
-					}
-				}
-			],
-			"request": {
-				"method": "POST",
-				"header": [
-					{
-						"key": "Content-Type",
-						"value": "application/json"
-					}
-				],
-				"body": {
-					"mode": "raw",
-					"raw": "{\r\n    \"email\": \"testuser1@example.com\",\r\n    \"type\": \"reset_password\"\r\n}"
-				},
-				"url": {
-					"raw": "{{BASE_URL}}/api/auth/otp/send",
-					"host": ["{{BASE_URL}}"],
-					"path": ["api", "auth", "otp", "send"]
-				}
-			},
-			"response": []
-		},
-		{
-			"name": "10. Validate Token (Gateway Test)",
-
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -295,15 +455,15 @@
 						"method": "GET",
 						"header": [],
 						"url": {
-							"raw": "{{BASE_URL}}/api/auth/validate",
+							"raw": "{{BASE_URL}}/api/knowledge/health",
 							"host": ["{{BASE_URL}}"],
-							"path": ["api", "auth", "validate"]
+							"path": ["api", "knowledge", "health"]
 						}
 					},
 					"response": []
 				}
 			],
-			"description": "APIs xác thực người dùng."
+			"description": "Knowledge Service health check."
 		},
 		{
 			"name": "Knowledge Service - Folders",

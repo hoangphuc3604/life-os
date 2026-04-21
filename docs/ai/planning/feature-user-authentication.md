@@ -6,11 +6,14 @@ description: Break down work into actionable tasks and estimate timeline
 
 # Project Planning & Task Breakdown
 
-> **Status Update [2026-04-05]:**
+> **Status Update [2026-04-20]:**
 > - **Foundation**: Complete.
 > - **Core**: Complete (Register, Login, Refresh, Logout, Guards).
 > - **OTP Module**: Complete (Send OTP, Verify OTP, Email verification on register).
-> - **Status**: All planned tasks are complete.
+> - **Reset Password Backend**: Complete (`POST /auth/reset-password`).
+> - **Forgot Password UI**: Complete (`/forgot-password` page with 3-step flow).
+> - **Resend Countdown Timer**: Complete (60s cooldown on RegisterPage and ForgotPasswordPage).
+> - **Status**: All planned tasks are complete. Unit/E2E tests deferred.
 
 ## Milestones
 **What are the major checkpoints?**
@@ -48,6 +51,12 @@ description: Break down work into actionable tasks and estimate timeline
 - [x] Task 4.5: Implement `EmailService` with SMTP/Nodemailer.
 - [x] Task 4.6: Update `PrismaService` schema with `OtpCode` model.
 - [x] Task 4.7: Integrate OTP verification with user registration flow (`isEmailVerified` flag).
+
+### Phase 5: Reset Password & UX Improvements
+- [x] Task 5.1: Implement `POST /auth/reset-password` endpoint with `ResetPasswordDto` validation.
+- [x] Task 5.2: Build `ForgotPasswordPage` with 3-step flow (email -> OTP -> new password).
+- [x] Task 5.3: Add "Forgot password?" link on LoginPage, route `/forgot-password`.
+- [x] Task 5.4: Add resend OTP countdown timer (60s) on RegisterPage and ForgotPasswordPage.
 
 ## Dependencies
 **What needs to happen in what order?**

@@ -1,4 +1,5 @@
-import { ConflictException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, UnauthorizedException } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import * as bcrypt from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
@@ -8,6 +9,8 @@ import { OtpService } from '../otp/otp.service';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new Logger(AuthService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly jwtService: JwtService,
@@ -23,7 +26,7 @@ export class AuthService {
 
     if (existingUser) {
       if (!existingUser.isEmailVerified) {
-        await this.otpService.generateAndSendOtp(userData.email, 'register');
+        await this.otpService.generateAndSendOtp(userData.email, 'register', existingUser.id);
         return { message: 'Verification email sent. Please check your inbox.' };
       }
       throw new ConflictException('User already exists');
@@ -38,7 +41,11 @@ export class AuthService {
         },
       });
 
-      await this.otpService.generateAndSendOtp(user.email, 'register');
+      try {
+        await this.otpService.generateAndSendOtp(user.email, 'register', user.id);
+      } catch (emailError) {
+        this.logger.error(`Failed to send OTP email to ${user.email}: ${emailError}`);
+      }
 
       const { passwordHash, ...result } = user;
       return { ...result, message: 'Verification email sent. Please check your inbox.' };
@@ -46,6 +53,7 @@ export class AuthService {
       if (error.code === 'P2002') {
         throw new ConflictException('User already exists');
       }
+      this.logger.error(`User creation failed: ${error.message}`);
       throw new InternalServerErrorException();
     }
   }
@@ -171,5 +179,21 @@ export class AuthService {
     } catch (e) {
     }
     return { message: 'Logged out' };
+  }
+
+  async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
+    await this.otpService.verifyOtp(email, code, 'reset_password');
+
+    const user = await this.prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+
+    await this.prisma.user.update({
+      where: { email },
+      data: { passwordHash: bcrypt.hashSync(newPassword, 10) },
+    });
+
+    this.logger.log(`Password reset successfully for user: ${email}`);
   }
 }

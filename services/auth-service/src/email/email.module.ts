@@ -10,8 +10,9 @@ import { EmailService } from './email.service';
       useFactory: async (configService: ConfigService) => ({
         transport: {
           host: configService.get<string>('EMAIL_HOST'),
-          port: configService.get<number>('EMAIL_PORT') || 587,
-          secure: configService.get<boolean>('EMAIL_SECURE') || false,
+          port: configService.get<number>('EMAIL_PORT') || 465,
+          secure: configService.get<boolean>('EMAIL_SECURE') ?? true,
+          ignoreTLS: false,
           auth: {
             user: configService.get<string>('EMAIL_USER'),
             pass: configService.get<string>('EMAIL_PASSWORD'),

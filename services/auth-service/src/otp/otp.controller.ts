@@ -1,10 +1,10 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
+import { BadRequestException, Body, Controller, HttpCode, HttpStatus, Post, UseGuards } from '@nestjs/common';
 import { ApiTags, ApiOperation, ApiResponse } from '@nestjs/swagger';
 import { ThrottlerGuard, Throttle } from '@nestjs/throttler';
 import { OtpService } from './otp.service';
 import { SendOtpDto } from './dto/send-otp.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { DEFAULT_OTP_TYPE } from '../common/types/otp.types';
+import { OTP_TYPES } from '../common/types/otp.types';
 
 @ApiTags('otp')
 @Controller('auth/otp')
@@ -20,7 +20,12 @@ export class OtpController {
   @ApiResponse({ status: 400, description: 'Bad Request.' })
   @ApiResponse({ status: 429, description: 'Too many requests.' })
   async sendOtp(@Body() dto: SendOtpDto) {
-    const type = dto.type || DEFAULT_OTP_TYPE;
+    if (dto.type === 'register') {
+      throw new BadRequestException(
+        'Use /auth/register to start registration. Do not send OTP directly.',
+      );
+    }
+    const type = dto.type || 'reset_password';
     await this.otpService.generateAndSendOtp(dto.email, type);
     return { message: 'OTP sent successfully' };
   }
