@@ -1,0 +1,662 @@
+# Instincts generated from https://github.com/hoangphuc3604/life-os
+# Generated: 2026-04-21T15:46:21.359Z
+# Version: 2.0
+# NOTE: This file supplements (does not replace) any existing curated instincts.
+# High-confidence manually curated instincts should be preserved alongside these.
+
+---
+id: life-os-commit-conventional
+trigger: "when writing a commit message"
+confidence: 0.85
+domain: git
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Commit Conventional
+
+## Action
+
+Use conventional commit format with prefixes: feat, chore, refactor, fix
+
+## Evidence
+
+- 33 commits analyzed
+- Detected conventional commit pattern
+- Examples: refactor: update Postman collection to remove bearer auth and include JSON body for refresh and logout requests, chore: remove pull_request trigger from deploy workflow to streamline CI/CD process
+
+---
+id: life-os-commit-length
+trigger: "when writing a commit message"
+confidence: 0.6
+domain: git
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Commit Length
+
+## Action
+
+Write moderate-length commit messages (~94 characters)
+
+## Evidence
+
+- Average commit message length: 94 chars
+- Based on 33 commits
+
+---
+id: life-os-naming-files
+trigger: "when creating a new file"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Naming Files
+
+## Action
+
+Use camelCase naming convention
+
+## Evidence
+
+- Analyzed file naming patterns in repository
+- Dominant pattern: camelCase
+
+---
+id: life-os-export-style
+trigger: "when exporting from a module"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Export Style
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Export pattern analysis
+- Dominant style: named
+
+---
+id: life-os-arch-type-based
+trigger: "when adding new code"
+confidence: 0.8
+domain: architecture
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Arch Type Based
+
+## Action
+
+Place code in the appropriate type folder (components/, services/, utils/, etc.)
+
+## Evidence
+
+- Type-based module organization detected
+- Folders: 
+
+---
+id: life-os-test-framework
+trigger: "when writing tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Test Framework
+
+## Action
+
+Use jest as the test framework
+
+## Evidence
+
+- Test framework detected: jest
+- File pattern: *.spec.ts
+
+---
+id: life-os-test-naming
+trigger: "when creating a test file"
+confidence: 0.85
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Test Naming
+
+## Action
+
+Name test files using the pattern: *.spec.ts
+
+## Evidence
+
+- File pattern: *.spec.ts
+- Consistent across test files
+
+---
+id: life-os-test-mocking
+trigger: "when mocking dependencies in tests"
+confidence: 0.75
+domain: testing
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Test Mocking
+
+## Action
+
+Use jest.mock for mocking
+
+## Evidence
+
+- Mocking pattern detected: jest.mock
+- Consistent across test files
+
+---
+id: life-os-workflow-database-migration
+trigger: "when modifying the database schema or adding tables"
+confidence: 0.7
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Workflow Database Migration
+
+## Action
+
+Follow the database-migration workflow:
+1. Create migration file
+2. Update schema definitions
+3. Generate/update types
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~4x per month
+- Files: migrations/*, **/schema.*, **/types.ts
+
+---
+id: life-os-workflow-feature-development
+trigger: "when implementing a new feature"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Workflow Feature Development
+
+## Action
+
+Follow the feature-development workflow:
+1. Add feature implementation
+2. Add tests for feature
+3. Update documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~17x per month
+- Files: services/knowledge-service/src/*, services/knowledge-service/src/auth/*, services/knowledge-service/src/blocks/*
+
+---
+id: life-os-workflow-refactoring
+trigger: "when refactoring code"
+confidence: 0.75
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Workflow Refactoring
+
+## Action
+
+Follow the refactoring workflow:
+1. Ensure tests pass before refactor
+2. Refactor code structure
+3. Verify tests still pass
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~5x per month
+- Files: src/**/*
+
+---
+id: life-os-workflow-add-or-enhance-api-feature-with-documentation-and-tests
+trigger: "when doing add or enhance api feature with documentation and tests"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Workflow Add Or Enhance Api Feature With Documentation And Tests
+
+## Action
+
+Follow the add-or-enhance-api-feature-with-documentation-and-tests workflow:
+1. Update or create new DTO files for request/response shapes
+2. Update or create service and controller files for the feature
+3. Update or create module files if needed
+4. Add or update tests (e.g., .spec.ts files)
+5. Update API documentation (Postman collection, docs/ai/*/feature-*.md)
+6. Update or create migration and schema files if database changes are involved
+7. Update frontend API hooks and UI if feature is user-facing
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: services/*/src/**/dto/*.ts, services/*/src/**/service.ts, services/*/src/**/controller.ts
+
+---
+id: life-os-workflow-add-or-modify-database-schema-with-migration
+trigger: "when doing add or modify database schema with migration"
+confidence: 0.6
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Workflow Add Or Modify Database Schema With Migration
+
+## Action
+
+Follow the add-or-modify-database-schema-with-migration workflow:
+1. Edit Prisma schema file
+2. Generate new migration SQL file
+3. Update migration lock file
+4. Update service code to use new/changed schema
+5. Update .env.example if new environment variables are needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~2x per month
+- Files: services/*/prisma/schema.prisma, services/*/prisma/migrations/*/migration.sql, services/*/prisma/migrations/migration_lock.toml
+
+---
+id: life-os-workflow-frontend-feature-development-with-hooks-and-ui
+trigger: "when doing frontend feature development with hooks and ui"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Workflow Frontend Feature Development With Hooks And Ui
+
+## Action
+
+Follow the frontend-feature-development-with-hooks-and-ui workflow:
+1. Create or update React components for the feature
+2. Create or update React hooks for data fetching/mutations
+3. Update API client files if backend endpoints change
+4. Update or add UI components (e.g., dialogs, buttons, modals)
+5. Update pages and routes as needed
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: web/src/components/**/*.tsx, web/src/hooks/**/*.ts, web/src/lib/api/*.ts
+
+---
+id: life-os-workflow-update-deployment-and-ci-cd-configuration
+trigger: "when doing update deployment and ci cd configuration"
+confidence: 0.65
+domain: workflow
+source: repo-analysis
+source_repo: https://github.com/hoangphuc3604/life-os
+---
+
+# Life Os Workflow Update Deployment And Ci Cd Configuration
+
+## Action
+
+Follow the update-deployment-and-ci-cd-configuration workflow:
+1. Edit Dockerfiles for affected services
+2. Edit docker-compose*.yml files
+3. Edit GitHub Actions workflow files
+4. Update deployment scripts or documentation
+
+## Evidence
+
+- Workflow detected from commit patterns
+- Frequency: ~3x per month
+- Files: services/*/Dockerfile, docker-compose*.yml, .github/workflows/*.yml
+
+---
+id: life-os-instinct-file-naming-camelCase
+trigger: "When creating or renaming a file in the codebase"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct File Naming CamelCase
+
+## Action
+
+Use camelCase for file names
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.files
+- Consistent usage in src and web folders
+
+---
+id: life-os-instinct-function-naming-camelCase
+trigger: "When defining a new function"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Function Naming CamelCase
+
+## Action
+
+Name the function using camelCase
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.functions
+- TypeScript conventions in services and web
+
+---
+id: life-os-instinct-class-naming-PascalCase
+trigger: "When creating a new class"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Class Naming PascalCase
+
+## Action
+
+Name the class using PascalCase
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.classes
+
+---
+id: life-os-instinct-constant-naming-SCREAMING_SNAKE_CASE
+trigger: "When declaring a constant"
+confidence: 0.9
+domain: code-style
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Constant Naming SCREAMING_SNAKE_CASE
+
+## Action
+
+Use SCREAMING_SNAKE_CASE for constant names
+
+## Evidence
+
+- Pattern in codeStyle.namingConventions.constants
+
+---
+id: life-os-instinct-import-style-mixed
+trigger: "When importing modules"
+confidence: 0.7
+domain: code-style
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Import Style Mixed
+
+## Action
+
+Use mixed import styles as appropriate (default and named imports)
+
+## Evidence
+
+- Pattern in codeStyle.importStyle
+- Observed in web and services code
+
+---
+id: life-os-instinct-export-style-named
+trigger: "When exporting modules or functions"
+confidence: 0.8
+domain: code-style
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Export Style Named
+
+## Action
+
+Prefer named exports
+
+## Evidence
+
+- Pattern in codeStyle.exportStyle
+- TypeScript best practices
+
+---
+id: life-os-instinct-test-file-pattern
+trigger: "When creating a test file"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Test File Pattern
+
+## Action
+
+Name the file with the pattern *.spec.ts
+
+## Evidence
+
+- Pattern in testing.filePattern
+- Seen in services/knowledge-service/src/**/*.spec.ts
+
+---
+id: life-os-instinct-test-framework-jest
+trigger: "When writing tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Test Framework Jest
+
+## Action
+
+Use Jest as the testing framework
+
+## Evidence
+
+- Pattern in testing.framework
+- jest.mock usage in code
+
+---
+id: life-os-instinct-test-type-unit
+trigger: "When writing tests"
+confidence: 0.8
+domain: testing
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Test Type Unit
+
+## Action
+
+Write unit tests by default
+
+## Evidence
+
+- Pattern in testing.testTypes
+- Most tests are unit tests
+
+---
+id: life-os-instinct-test-mocking-jest-mock
+trigger: "When mocking dependencies in tests"
+confidence: 0.9
+domain: testing
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Test Mocking Jest Mock
+
+## Action
+
+Use jest.mock for mocking
+
+## Evidence
+
+- Pattern in testing.mockingStyle
+- Seen in *.spec.ts files
+
+---
+id: life-os-instinct-commit-format-conventional
+trigger: "When making a commit"
+confidence: 0.95
+domain: git
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Commit Format Conventional
+
+## Action
+
+Use conventional commit prefixes: feat, fix, chore, refactor
+
+## Evidence
+
+- Pattern in commits.prefixes
+- Examples: 'feat: Add client-side authentication', 'fix: ensure folder expansion...'
+
+---
+id: life-os-instinct-commit-length-90-chars
+trigger: "When writing a commit message"
+confidence: 0.7
+domain: git
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Commit Length 90 Chars
+
+## Action
+
+Keep the commit message concise, around 90-100 characters
+
+## Evidence
+
+- Pattern in commits.averageLength
+- Examples in commit history
+
+---
+id: life-os-instinct-add-or-enhance-api-feature
+trigger: "When someone wants to add a new API endpoint or feature to a service"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Add Or Enhance Api Feature
+
+## Action
+
+Update/create DTOs, service, controller, module, tests, and API documentation; update migrations and frontend if needed
+
+## Evidence
+
+- Workflow: add-or-enhance-api-feature-with-documentation-and-tests
+- Pattern in services/*/src/**/dto/*.ts, controller.ts, service.ts, module.ts, docs/ai/*, postman_collection.json
+
+---
+id: life-os-instinct-add-or-modify-database-schema
+trigger: "When someone wants to add or modify a database table, field, or relation"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Add Or Modify Database Schema
+
+## Action
+
+Edit Prisma schema, generate migration, update migration lock, update service code, update .env.example
+
+## Evidence
+
+- Workflow: add-or-modify-database-schema-with-migration
+- Pattern in services/*/prisma/schema.prisma, migrations/*, migration_lock.toml
+
+---
+id: life-os-instinct-frontend-feature-development
+trigger: "When someone wants to add a new user-facing feature or UI improvement"
+confidence: 0.9
+domain: workflow
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Frontend Feature Development
+
+## Action
+
+Create/update React components, hooks, API client, UI components, pages, and routes
+
+## Evidence
+
+- Workflow: frontend-feature-development-with-hooks-and-ui
+- Pattern in web/src/components/**/*.tsx, hooks/**/*.ts, lib/api/*.ts, pages/**/*.tsx
+
+---
+id: life-os-instinct-update-deployment-ci-cd
+trigger: "When someone wants to improve deployment, add new environments, or fix CI/CD issues"
+confidence: 0.95
+domain: workflow
+source: repo-analysis
+source_repo: hoangphuc3604/life-os
+---
+
+# Life Os Instinct Update Deployment Ci Cd
+
+## Action
+
+Edit Dockerfiles, docker-compose files, GitHub Actions workflows, and deployment scripts/docs
+
+## Evidence
+
+- Workflow: update-deployment-and-ci-cd-configuration
+- Pattern in services/*/Dockerfile, docker-compose*.yml, .github/workflows/*.yml
+
