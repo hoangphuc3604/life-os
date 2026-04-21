@@ -182,12 +182,32 @@ export class AuthService {
   }
 
   async resetPassword(email: string, code: string, newPassword: string): Promise<void> {
-    await this.otpService.verifyOtp(email, code, 'reset_password');
-
     const user = await this.prisma.user.findUnique({ where: { email } });
     if (!user) {
       throw new BadRequestException('User not found');
     }
+
+    const record = await this.prisma.otpCode.findFirst({
+      where: { email, type: 'reset_password', expiresAt: { gt: new Date() } },
+      orderBy: { createdAt: 'desc' },
+    });
+
+    if (!record) {
+      throw new BadRequestException(
+        'OTP expired or not found. Please request a new verification code.',
+      );
+    }
+
+    const isValid = await bcrypt.compare(code, record.codeHash);
+    if (!isValid) {
+      throw new BadRequestException('Invalid verification code');
+    }
+
+    if (newPassword === '__VERIFY_STEP__') {
+      return;
+    }
+
+    await this.prisma.otpCode.delete({ where: { id: record.id } });
 
     await this.prisma.user.update({
       where: { email },

@@ -95,7 +95,10 @@ export function useResetPasswordMutation() {
 
   return useMutation({
     mutationFn: (payload: ResetPasswordPayload) => authApi.resetPassword(payload),
-    onSuccess: () => {
+    onSuccess: (_, variables) => {
+      if (variables.newPassword === '__VERIFY_STEP__') {
+        return
+      }
       appToast.success('Password reset successfully! Please login with your new password.')
       navigate('/login', { replace: true })
     },

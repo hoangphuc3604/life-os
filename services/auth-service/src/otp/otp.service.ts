@@ -29,13 +29,15 @@ export class OtpService {
 
     const codeHash = await bcrypt.hash(code, 10);
 
+    const userIdToSave = userId ?? null;
+
     await this.prisma.otpCode.create({
       data: {
         email,
         codeHash,
         type,
         expiresAt,
-        userId: userId ?? null,
+        userId: userIdToSave,
       },
     });
 
@@ -52,6 +54,10 @@ export class OtpService {
     );
 
     this.logger.log(`OTP sent to ${email} for type: ${type}`);
+  }
+
+  async findUserByEmail(email: string) {
+    return this.prisma.user.findUnique({ where: { email } });
   }
 
   async verifyOtp(email: string, code: string, type: OtpType): Promise<void> {
@@ -76,17 +82,21 @@ export class OtpService {
       throw new BadRequestException('Invalid or expired OTP code');
     }
 
-    await this.prisma.otpCode.delete({ where: { id: record.id } });
-
     if (type === 'register') {
-      if (!record.user) {
-        this.logger.error(`OTP verification failed: user not found for email ${email}`);
+      await this.prisma.otpCode.delete({ where: { id: record.id } });
+      const user = record.user ?? (await this.prisma.user.findUnique({ where: { email } }));
+      if (!user) {
+        this.logger.error(`OTP verification failed: no account found for email ${email}`);
         throw new BadRequestException(
-          'User not found. Please use POST /auth/register first, then verify OTP.',
+          'No account found for this email. Please register first.',
         );
       }
+      if (user.isEmailVerified) {
+        this.logger.warn(`OTP verification skipped: email ${email} already verified`);
+        return;
+      }
       await this.prisma.user.update({
-        where: { id: record.user.id },
+        where: { id: user.id },
         data: { isEmailVerified: true },
       });
     }

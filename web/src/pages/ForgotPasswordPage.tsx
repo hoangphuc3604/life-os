@@ -22,6 +22,8 @@ export function ForgotPasswordPage() {
   const verifyOtp = useVerifyOtpMutation()
   const resetPassword = useResetPasswordMutation()
 
+  const isOtpVerified = resetPassword.isSuccess && step === 'otp'
+
   useEffect(() => {
     return () => {
       if (countdownRef.current) clearInterval(countdownRef.current)
@@ -65,10 +67,13 @@ export function ForgotPasswordPage() {
 
   async function handleVerifyOtp(e: React.FormEvent) {
     e.preventDefault()
-    verifyOtp.mutate(
-      { email, code: otp, type: 'reset_password' },
+    resetPassword.mutate(
+      { email, code: otp, newPassword: '__VERIFY_STEP__' },
       {
         onSuccess: () => setStep('new_password'),
+        onError: () => {
+          setOtpError('Invalid or expired verification code')
+        },
       },
     )
   }
