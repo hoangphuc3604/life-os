@@ -30,7 +30,7 @@ RUN mkdir -p uploads && chown nodejs:nodejs uploads
 USER nodejs
 EXPOSE 3002
 ENV PORT=3002
-CMD ["node", "dist/main.js"]
+CMD ["npm", "run", "start:prod"]
 
 FROM production AS cloudrun
 COPY --chown=nodejs:nodejs cloud-run-entrypoint.sh ./cloud-run-entrypoint.sh

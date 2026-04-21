@@ -1,0 +1,15 @@
+---
+alwaysApply: true
+---
+
+- ALWAYS ensure the code passes linting before completing the task.
+- Check for syntax errors, formatting issues, and common linting violations.
+- Follow the standard linting rules of the programming language being used:
+  - Python: PEP8 (flake8, ruff, or similar)
+  - JavaScript/TypeScript: ESLint + Prettier
+  - Other languages: use their standard linters
+
+- Fix all lint errors and warnings before providing the final code.
+- Ensure consistent formatting, imports, and naming conventions.
+
+- Do not deliver code that would fail a typical linter.

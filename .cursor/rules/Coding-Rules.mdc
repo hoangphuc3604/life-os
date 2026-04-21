@@ -1,0 +1,18 @@
+---
+alwaysApply: true
+---
+
+- Do NOT write comments in code.
+- Only add comments when the logic is extremely complex and cannot be understood without explanation.
+- If comments are absolutely necessary, keep them minimal and in English.
+
+- ALWAYS use docstrings for functions, classes, and modules.
+- Docstrings MUST follow the standard convention of the programming language being used:
+  - Python: PEP 257 style docstrings
+  - JavaScript/TypeScript: JSDoc
+  - Other languages: use their official documentation standard
+
+- Docstrings must be clear, concise, and written in English.
+- Docstrings should describe purpose, parameters, return values, and important behavior.
+
+- Prefer clean, self-explanatory code over comments.

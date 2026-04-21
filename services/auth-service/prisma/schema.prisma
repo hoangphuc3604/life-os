@@ -9,14 +9,16 @@ datasource db {
 }
 
 model User {
-  id           String         @id @default(uuid())
-  username     String         @unique
-  email        String         @unique
-  passwordHash String         @map("password_hash")
-  roles        String[]       @default(["user"])
-  createdAt    DateTime       @default(now()) @map("created_at")
-  updatedAt    DateTime       @updatedAt @map("updated_at")
-  refreshTokens RefreshToken[]
+  id             String         @id @default(uuid())
+  username       String         @unique
+  email          String         @unique
+  passwordHash   String         @map("password_hash")
+  roles          String[]       @default(["user"])
+  isEmailVerified Boolean       @default(false) @map("is_email_verified")
+  createdAt      DateTime       @default(now()) @map("created_at")
+  updatedAt      DateTime       @updatedAt @map("updated_at")
+  refreshTokens  RefreshToken[]
+  otpCodes       OtpCode[]
 
   @@map("users")
 }
@@ -31,4 +33,18 @@ model RefreshToken {
   user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@map("refresh_tokens")
+}
+
+model OtpCode {
+  id        String   @id @default(uuid())
+  userId    String?  @map("user_id")
+  email     String
+  codeHash  String   @map("code_hash")
+  type      String
+  expiresAt DateTime @map("expires_at")
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User?    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([email, type])
+  @@map("otp_codes")
 }

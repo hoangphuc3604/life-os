@@ -6,11 +6,14 @@ description: Break down work into actionable tasks and estimate timeline
 
 # Project Planning & Task Breakdown
 
-> **Status Update [2026-02-12]:** 
+> **Status Update [2026-04-20]:**
 > - **Foundation**: Complete.
 > - **Core**: Complete (Register, Login, Refresh, Logout, Guards).
-> - **Integration**: Complete (Tests, Manual Verification).
-> - **Status**: All planned tasks are complete.
+> - **OTP Module**: Complete (Send OTP, Verify OTP, Email verification on register).
+> - **Reset Password Backend**: Complete (`POST /auth/reset-password`).
+> - **Forgot Password UI**: Complete (`/forgot-password` page with 3-step flow).
+> - **Resend Countdown Timer**: Complete (60s cooldown on RegisterPage and ForgotPasswordPage).
+> - **Status**: All planned tasks are complete. Unit/E2E tests deferred.
 
 ## Milestones
 **What are the major checkpoints?**
@@ -18,6 +21,7 @@ description: Break down work into actionable tasks and estimate timeline
 - [x] Milestone 1: Foundation Setup (NestJS, TypeORM, Postgres) - Estimate: 1 Day
 - [x] Milestone 2: Core Authentication Logic (Register, Login, JWT, Guards) - Estimate: 2 Days
 - [x] Milestone 3: Testing & Integration (Unit/E2E tests, Gateway config) - Estimate: 1 Day
+- [x] Milestone 4: OTP Module (Email Verification, Password Reset) - Estimate: 1 Day
 
 ## Task Breakdown
 **What specific work needs to be done?**
@@ -39,12 +43,28 @@ description: Break down work into actionable tasks and estimate timeline
 - [x] Task 3.2: Create `implementation_plan.md` for specific execution steps.
 - [x] Task 3.3: (Verification) Test manually via Postman/cURL.
 
+### Phase 4: OTP Module
+- [x] Task 4.1: Create OTP types in `common/types/otp.types.ts` (`OTP_TYPES`, `OtpType`, `DEFAULT_OTP_TYPE`).
+- [x] Task 4.2: Implement `SendOtpDto` and `VerifyOtpDto` with validation.
+- [x] Task 4.3: Implement `OtpController` with `POST /auth/otp/send` and `POST /auth/otp/verify` endpoints.
+- [x] Task 4.4: Implement `OtpService` with OTP generation, hashing, and email delivery.
+- [x] Task 4.5: Implement `EmailService` with SMTP/Nodemailer.
+- [x] Task 4.6: Update `PrismaService` schema with `OtpCode` model.
+- [x] Task 4.7: Integrate OTP verification with user registration flow (`isEmailVerified` flag).
+
+### Phase 5: Reset Password & UX Improvements
+- [x] Task 5.1: Implement `POST /auth/reset-password` endpoint with `ResetPasswordDto` validation.
+- [x] Task 5.2: Build `ForgotPasswordPage` with 3-step flow (email -> OTP -> new password).
+- [x] Task 5.3: Add "Forgot password?" link on LoginPage, route `/forgot-password`.
+- [x] Task 5.4: Add resend OTP countdown timer (60s) on RegisterPage and ForgotPasswordPage.
+
 ## Dependencies
 **What needs to happen in what order?**
 
 - Task 1.1 -> 1.2 -> 1.3 -> 2.1 -> 2.2 -> 2.3 -> 2.4 -> 3.1
 - External: PostgreSQL database must be running.
 - External: `api-gateway` needs to be configured to route `/auth/*` to this service.
+- OTP Module: Task 4.1 -> 4.2 -> 4.3 -> 4.4 -> 4.5 -> 4.6 -> 4.7
 
 ## Timeline & Estimates
 **When will things be done?**

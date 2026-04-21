@@ -10,6 +10,12 @@ services:
     volumes:
       - postgres_data:/var/lib/postgresql/data
       - ./docker/postgres-init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-user} -d postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
     restart: unless-stopped
     networks:
       - lifeos-network
@@ -23,7 +29,8 @@ services:
       - ./services/auth-service/.env
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && node dist/main.js"
     restart: unless-stopped
     networks:
       - lifeos-network
@@ -39,7 +46,8 @@ services:
       - knowledge_uploads:/usr/src/app/uploads
     depends_on:
       postgres:
-        condition: service_started
+        condition: service_healthy
+    command: sh -c "npx prisma migrate deploy && node dist/main.js"
     restart: unless-stopped
     networks:
       - lifeos-network

@@ -1,0 +1,14 @@
+---
+description: 
+alwaysApply: true
+---
+
+- ALWAYS respond in Vietnamese for:
+  - Question answering tasks
+  - Explanations
+  - Planning or outlining tasks
+
+- Use clear, natural, and concise Vietnamese.
+- Keep technical terms in English when appropriate, but explanations must be in Vietnamese.
+
+- Only use other languages if the user explicitly requests it.
