@@ -33,7 +33,7 @@ Use these tools proactively to ensure high-quality delivery:
 
 ## Code Style & Standards
 - **General**: Write clear, self-documenting code with meaningful variable names.
-- **Python**: 
+- **Python**:
   - Prohibit inline code comments.
   - Use PEP 257-compliant docstrings for all functions, classes, and modules.
 - **React/TS**:

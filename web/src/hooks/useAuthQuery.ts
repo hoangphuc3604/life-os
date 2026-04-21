@@ -65,31 +65,6 @@ export function useLogoutMutation() {
     },
   })
 }
-
-export function useSendOtpMutation() {
-  return useMutation({
-    mutationFn: (payload: SendOtpPayload) => authApi.sendOtp(payload),
-    onSuccess: () => {
-      appToast.success('Verification code sent. Please check your inbox.')
-    },
-    onError: () => {
-      appToast.error('Failed to send verification code. Please try again.')
-    },
-  })
-}
-
-export function useVerifyOtpMutation() {
-  return useMutation({
-    mutationFn: (payload: VerifyOtpPayload) => authApi.verifyOtp(payload),
-    onSuccess: () => {
-      appToast.success('Email verified successfully!')
-    },
-    onError: () => {
-      appToast.error('Invalid or expired verification code.')
-    },
-  })
-}
-
 export function useResetPasswordMutation() {
   const navigate = useNavigate()
 
